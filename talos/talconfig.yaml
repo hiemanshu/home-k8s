@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
+---
+clusterName: LordOfTheClusters
+
+talosVersion: "${talosVersion}"
+kubernetesVersion: "${kubernetesVersion}"
+
+endpoint: https://192.168.69.1:6443
+additionalApiServerCertSans: &sans
+  - "127.0.0.1"
+  - "192.168.69.1"
+  - "k8s.hiems.dev"
+additionalMachineCertSans: *sans
+
+clusterPodNets: ["10.42.0.0/16"]
+clusterSvcNets: ["10.43.0.0/16"]
+
+# Disable built-in CNI to use Cilium
+cniConfig:
+  name: none
+
+nodes:
+  - hostname: "gandalf"
+    ipAddress: "192.168.68.11"
+    installDisk: "/dev/disk/by-id/scsi-3600508b1001c29a35449a6fd21b7eb00"
+    machineSpec:
+      secureboot: false
+    talosImageURL: factory.talos.dev/installer/36cd6536eaec8ba802be2d38974108359069cedba8857302f69792b26b87c010
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "90:e2:ba:8a:f4:bc"
+        dhcp: false
+        addresses:
+          - "192.168.68.11/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.68.1"
+        mtu: 1500
+        vip:
+          ip: "192.168.69.1"
+  - hostname: "aragorn"
+    ipAddress: "192.168.68.101"
+    installDisk: "/dev/nvme0n1"
+    machineSpec:
+      secureboot: false
+    talosImageURL: factory.talos.dev/installer/249d9135de54962744e917cfe654117000cba369f9152fbab9d055a00aa3664f
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "90:e2:ba:8a:f4:bd"
+        dhcp: false
+        addresses:
+          - "192.168.68.101/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.68.1"
+        mtu: 1500
+        vip:
+          ip: "192.168.69.1"
+
+# Global patches
+patches:
+  - "@./patches/global/machine-files.yaml"
+  - "@./patches/global/machine-kubelet.yaml"
+  - "@./patches/global/machine-network.yaml"
+  - "@./patches/global/machine-sysctls.yaml"
+  - "@./patches/global/machine-time.yaml"
+
+# Controller patches
+controlPlane:
+  patches:
+    - "@./patches/controller/admission-controller-patch.yaml"
+    - "@./patches/controller/cluster.yaml"
