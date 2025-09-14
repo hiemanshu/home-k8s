@@ -1,0 +1,132 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: onepassword-connect
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: external-secrets
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      onepassword-connect:
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          api:
+            image:
+              repository: docker.io/1password/connect-api
+              tag: 1.7.4@sha256:f97189814239381e6dd88577f2b0b838a64e006a460608455b3127c15b174601
+            env:
+              XDG_DATA_HOME: &configDir /config
+              OP_HTTP_PORT: &apiPort 80
+              OP_BUS_PORT: 11220
+              OP_BUS_PEERS: localhost:11221
+              OP_SESSION:
+                valueFrom:
+                  secretKeyRef:
+                    name: onepassword-connect-secret
+                    key: 1password-credentials.json
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /heartbeat
+                    port: *apiPort
+                  initialDelaySeconds: 15
+                  periodSeconds: 30
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *apiPort
+                  initialDelaySeconds: 15
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources: &resources
+              requests:
+                cpu: 10m
+              limits:
+                memory: 256M
+          sync:
+            image:
+              repository: docker.io/1password/connect-sync
+              tag: 1.7.4@sha256:27e7ec47e1ad8eaa2f54764fa0736954a5119d0155dea3c923c481c89c5f964c
+            env:
+              XDG_DATA_HOME: *configDir
+              OP_HTTP_PORT: &syncPort 8081
+              OP_BUS_PORT: 11221
+              OP_BUS_PEERS: localhost:11220
+              OP_SESSION:
+                valueFrom:
+                  secretKeyRef:
+                    name: onepassword-connect-secret
+                    key: 1password-credentials.json
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /heartbeat
+                    port: *syncPort
+                  initialDelaySeconds: 15
+                  periodSeconds: 30
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *syncPort
+                  initialDelaySeconds: 15
+            securityContext: *securityContext
+            resources: *resources
+        pod:
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: onepassword-connect
+        ports:
+          http:
+            port: *apiPort
+    route:
+      app:
+        hostnames: ["secrets.hiems.net"]
+        parentRefs:
+          - name: internal
+            namespace: kube-system
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *apiPort
+    persistence:
+      config:
+        type: emptyDir
+        globalMounts:
+          - path: *configDir
