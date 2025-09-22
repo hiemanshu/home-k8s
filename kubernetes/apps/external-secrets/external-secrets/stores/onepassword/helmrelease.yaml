@@ -8,7 +8,7 @@ spec:
   interval: 30m
   chartRef:
     kind: OCIRepository
-    name: external-secrets
+    name: onepassword
   install:
     remediation:
       retries: 3
