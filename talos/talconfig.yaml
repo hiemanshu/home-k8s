@@ -1,0 +1,72 @@
+---
+clusterName: kubernetes
+
+talosVersion: "${talosVersion}"
+kubernetesVersion: "${kubernetesVersion}"
+
+endpoint: https://192.168.69.1:6443
+additionalApiServerCertSans: &sans
+  - "127.0.0.1"
+  - "192.168.69.1"
+additionalMachineCertSans: *sans
+
+clusterPodNets: ["10.42.0.0/16"]
+clusterSvcNets: ["10.43.0.0/16"]
+
+# Disable built-in CNI to use Cilium
+cniConfig:
+  name: none
+
+nodes:
+  - hostname: "gandalf"
+    ipAddress: "192.168.68.11"
+    installDisk: "/dev/disk/by-id/scsi-3600508b1001c29a35449a6fd21b7eb00"
+    machineSpec:
+      secureboot: false
+    talosImageURL: factory.talos.dev/installer/4a619fdc05c5ca2f02a7a0c21df5ec24039230e783448b66307fc97db5f67593
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "90:e2:ba:8a:f4:bc"
+        dhcp: false
+        addresses:
+          - "192.168.68.11/22"
+        routes:
+          - gateway: "192.168.68.1"
+            network: 0.0.0.0/0
+        mtu: 1500
+        vip:
+          ip: "192.168.69.1"
+  - hostname: "aragorn"
+    ipAddress: "192.168.68.12"
+    installDisk: "/dev/disk/by-id/scsi-3600508b1001c29a35449a6fd21b7eb00"
+    machineSpec:
+      secureboot: false
+    talosImageURL: factory.talos.dev/installer/4a619fdc05c5ca2f02a7a0c21df5ec24039230e783448b66307fc97db5f67593
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "90:e2:ba:8a:f4:bd"
+        dhcp: false
+        addresses:
+          - "192.168.68.12/22"
+        routes:
+          - gateway: "192.168.68.1"
+            network: 0.0.0.0/0
+        mtu: 1500
+        vip:
+          ip: "192.168.69.1"
+
+# Global patches
+patches:
+  - "@./patches/global/machine-files.yaml"
+  - "@./patches/global/machine-kubelet.yaml"
+  - "@./patches/global/machine-network.yaml"
+  - "@./patches/global/machine-sysctls.yaml"
+  - "@./patches/global/machine-time.yaml"
+
+# Controller patches
+controlPlane:
+  patches:
+    - "@./patches/controller/cluster.yaml"
+
