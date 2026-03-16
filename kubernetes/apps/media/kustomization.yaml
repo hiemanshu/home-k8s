@@ -13,6 +13,6 @@ resources:
   - ./sonarr/ks.yaml
   - ./prowlarr/ks.yaml
   - ./sabnzbd/ks.yaml
+  - ./jellyseerr/ks.yaml
+  - ./tautulli/ks.yaml
 #   - ./plex/ks.yaml
-#   - ./jellyseerr/ks.yaml
-#   - ./tautulli/ks.yaml

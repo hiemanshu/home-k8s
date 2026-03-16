@@ -65,7 +65,7 @@ spec:
             port: *port
     route:
       app:
-        hostnames: ["tautulli.heems.dev"]
+        hostnames: ["tautulli.${SECRET_DOMAIN}"]
         parentRefs:
           - name: envoy-internal
             namespace: network
