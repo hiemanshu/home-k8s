@@ -1,0 +1,62 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: volsync-unlock
+spec:
+  # Daily, offset from the top of the hour so it does not coincide with a backup run.
+  # `restic unlock` only removes locks older than 30m, so it is safe alongside live backups.
+  schedule: "30 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: volsync-unlock
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: unlock
+              image: docker.io/restic/restic:0.18.1
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  fail=0
+                  # One repo per app that uses the volsync component
+                  for app in plex prowlarr radarr sabnzbd sonarr; do
+                    echo "== unlocking ${app} =="
+                    if ! restic --no-cache -r "${RESTIC_REPOSITORY}/${app}" unlock; then
+                      echo "unlock failed: ${app}"
+                      fail=1
+                    fi
+                  done
+                  exit "${fail}"
+              env:
+                - name: HOME
+                  value: /tmp
+              envFrom:
+                - secretRef:
+                    name: volsync-unlock-secret
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
