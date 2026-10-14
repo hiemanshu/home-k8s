@@ -144,6 +144,10 @@ spec:
                 icon: forgejo.png
                 href: https://git.${SECRET_DOMAIN}
                 description: Git forge
+            - Mirror:
+                icon: gitea.png
+                href: https://mirror.${SECRET_DOMAIN}
+                description: GitHub → Forgejo mirror
         - Infrastructure:
             - Longhorn:
                 icon: longhorn.png
