@@ -46,6 +46,28 @@ spec:
             secretKeyRef:
               name: forgejo-secret
               key: s3-secret-access-key
+        # [lfs] needs its own copy: a subsystem section does not inherit MINIO_*
+        # from [storage], and app.ini keeps the section once written
+        - name: FORGEJO__LFS__MINIO_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-secret
+              key: s3-endpoint
+        - name: FORGEJO__LFS__MINIO_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-secret
+              key: s3-bucket
+        - name: FORGEJO__LFS__MINIO_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-secret
+              key: s3-access-key-id
+        - name: FORGEJO__LFS__MINIO_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-secret
+              key: s3-secret-access-key
       config:
         APP_NAME: Forgejo
         server:
@@ -75,10 +97,14 @@ spec:
           PROVIDER: redis
           PROVIDER_CONFIG: redis://dragonfly.dev.svc.cluster.local:6379/0?pool_size=100&idle_timeout=180s
           SESSION_LIFE_TIME: 1209600
-        # object storage (endpoint/bucket/keys come from the secret via env).
-        # NOTE: do NOT add a [lfs]/[packages] override -- a subsystem section does
-        # not inherit MINIO_* from [storage], so LFS would get an empty endpoint.
+        # object storage for every subsystem via the [storage] defaults
+        # (endpoint/bucket/keys come from the secret via env).
         storage:
+          STORAGE_TYPE: minio
+          MINIO_USE_SSL: false
+          MINIO_LOCATION: us-east-1
+        # [lfs] needs it explicitly (see the FORGEJO__LFS__ env above)
+        lfs:
           STORAGE_TYPE: minio
           MINIO_USE_SSL: false
           MINIO_LOCATION: us-east-1
