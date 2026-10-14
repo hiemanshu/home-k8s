@@ -67,10 +67,36 @@ data:
       filesystem:
         filename: /data/notification.txt
     access_control:
-      default_policy: one_factor
+      # Default deny. Nothing internal is reachable unless a rule below grants it.
+      # NOTE: apps that gate themselves with their own OIDC against Authelia get
+      # `bypass` here (the app is the gate, Authelia is the IdP) -- planned for
+      # git / files / immich / share as they land. Everything protected at the edge
+      # by forward-auth instead gets a group rule below.
+      default_policy: deny
       rules:
+        # Portal must be reachable before login (frontend, OIDC, assets).
         - domain: auth.${SECRET_DOMAIN}
           policy: bypass
+        # ntfy is intentionally public and enforces its own users/tokens.
+        - domain: notify.${SECRET_DOMAIN}
+          policy: bypass
+        # Dashboard: any authenticated user.
+        - domain: home.${SECRET_DOMAIN}
+          policy: one_factor
+        # Admin-only UIs (servarr media UIs + cluster/admin surfaces).
+        - domain:
+            - grafana.${SECRET_DOMAIN}
+            - users.${SECRET_DOMAIN}
+            - longhorn.${SECRET_DOMAIN}
+            - secrets.${SECRET_DOMAIN}
+            - radarr.${SECRET_DOMAIN}
+            - sonarr.${SECRET_DOMAIN}
+            - prowlarr.${SECRET_DOMAIN}
+            - sabnzbd.${SECRET_DOMAIN}
+            - tautulli.${SECRET_DOMAIN}
+          subject:
+            - 'group:admins'
+          policy: one_factor
     identity_providers:
       oidc:
         hmac_secret: {{ secret "/secrets/oidc_hmac_secret" }}
