@@ -3,27 +3,28 @@
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: radarr
+  name: authelia-forwardauth
 spec:
   targetRefs:
     - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: radarr
+      kind: Gateway
+      name: envoy-internal
   extAuth:
     failOpen: false
     headersToExtAuth:
-      - accept
-      - cookie
+      - X-Forwarded-Proto
       - authorization
       - proxy-authorization
-      - x-forwarded-proto
-      - x-forwarded-host
+      - accept
+      - cookie
     http:
-      # Envoy appends the original request path; keep the trailing slash so
-      # Authelia's endpoint sub-path (its "original path") keeps its leading '/'
+      # trailing slash matters: Envoy appends the original path, so Authelia's
+      # endpoint sub-path keeps its leading '/'
       path: /api/authz/ext-authz/
       backendRefs:
-        - name: authelia
+        - group: ""
+          kind: Service
+          name: authelia
           namespace: auth
           port: 9091
       headersToBackend:

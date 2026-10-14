@@ -67,9 +67,7 @@ data:
       filesystem:
         filename: /data/notification.txt
     access_control:
-      default_policy: deny
+      default_policy: one_factor
       rules:
         - domain: auth.${SECRET_DOMAIN}
           policy: bypass
-        - domain: radarr.${SECRET_DOMAIN}
-          policy: one_factor
