@@ -124,14 +124,6 @@ spec:
                   type: sabnzbd
                   url: http://sabnzbd.media.svc.cluster.local:80
                   key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
-            - Jellyseerr:
-                icon: jellyseerr.png
-                href: https://requests.${SECRET_DOMAIN}
-                description: Requests
-                widget:
-                  type: seerr
-                  url: http://jellyseerr.media.svc.cluster.local:80
-                  key: "{{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}"
         - Monitoring:
             - Grafana:
                 icon: grafana.png
