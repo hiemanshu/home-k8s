@@ -18,7 +18,8 @@ spec:
     fullnameOverride: nfs-provisioner
     nfs:
       server: 192.168.69.12
-      path: /volumes/immich
+      # the real export is /volumes; the provisioner auto-creates a subdir per PVC
+      path: /volumes
       # keep data if a PVC is deleted
       reclaimPolicy: Retain
     storageClass:
@@ -29,3 +30,5 @@ spec:
       archiveOnDelete: false
       accessModes: ReadWriteOnce
       volumeBindingMode: Immediate
+      # $$$$ -> Flux envsubst renders $${...}; provisioner makes /volumes/<ns>/<pvc>
+      pathPattern: "$${.PVC.namespace}/$${.PVC.name}"
