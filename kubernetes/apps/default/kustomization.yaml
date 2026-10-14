@@ -12,3 +12,4 @@ resources:
   - ./postgres/ks.yaml
   - ./echo/ks.yaml
   - ./homepage/ks.yaml
+  - ./zipline/ks.yaml
