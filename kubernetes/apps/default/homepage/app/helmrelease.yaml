@@ -36,6 +36,9 @@ spec:
     env:
       - name: HOMEPAGE_ALLOWED_HOSTS
         value: "home.${SECRET_DOMAIN}"
+    envFrom:
+      - secretRef:
+          name: homepage-widgets-secret
     config:
       kubernetes:
         mode: cluster
@@ -76,6 +79,11 @@ spec:
         - search:
             provider: duckduckgo
             target: _blank
+        - datetime:
+            text_size: xl
+            format:
+              timeStyle: short
+              dateStyle: short
       services:
         - Media:
             - Plex:
@@ -86,27 +94,49 @@ spec:
                 icon: radarr.png
                 href: https://radarr.${SECRET_DOMAIN}
                 description: Movies
+                widget:
+                  type: radarr
+                  url: http://radarr.media.svc.cluster.local:80
+                  key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+                  enableQueue: true
             - Sonarr:
                 icon: sonarr.png
                 href: https://sonarr.${SECRET_DOMAIN}
                 description: TV
+                widget:
+                  type: sonarr
+                  url: http://sonarr.media.svc.cluster.local:80
+                  key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
+                  enableQueue: true
             - Prowlarr:
                 icon: prowlarr.png
                 href: https://prowlarr.${SECRET_DOMAIN}
                 description: Indexers
+                widget:
+                  type: prowlarr
+                  url: http://prowlarr.media.svc.cluster.local:80
+                  key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
             - SABnzbd:
                 icon: sabnzbd.png
                 href: https://sabnzbd.${SECRET_DOMAIN}
                 description: Usenet
+                widget:
+                  type: sabnzbd
+                  url: http://sabnzbd.media.svc.cluster.local:80
+                  key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
+            - Jellyseerr:
+                icon: jellyseerr.png
+                href: https://requests.${SECRET_DOMAIN}
+                description: Requests
+                widget:
+                  type: seerr
+                  url: http://jellyseerr.media.svc.cluster.local:80
+                  key: "{{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}"
         - Monitoring:
             - Grafana:
                 icon: grafana.png
                 href: https://grafana.${SECRET_DOMAIN}
                 description: Metrics & logs
-            - Gatus:
-                icon: gatus.png
-                href: https://status.${SECRET_DOMAIN}
-                description: Status page
         - Identity:
             - Authelia:
                 icon: authelia.png
