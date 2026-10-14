@@ -80,6 +80,19 @@ spec:
           - backendRefs:
               - identifier: authelia
                 port: 9091
+      # Exposed on the external gateway (Cloudflare Tunnel) so internet-facing
+      # apps can complete OIDC against Authelia. Do NOT put this behind CF Access.
+      authelia-external:
+        hostnames:
+          - "auth.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: authelia
+                port: 9091
     persistence:
       config:
         type: configMap
