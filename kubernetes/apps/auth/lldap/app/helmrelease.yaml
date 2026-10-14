@@ -59,7 +59,7 @@ spec:
     route:
       ldap:
         hostnames:
-          - "ldap.${SECRET_DOMAIN}"
+          - "users.${SECRET_DOMAIN}"
         parentRefs:
           - name: envoy-internal
             namespace: network
