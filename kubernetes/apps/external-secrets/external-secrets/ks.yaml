@@ -36,10 +36,6 @@ spec:
       app.kubernetes.io/name: *app
   decryption:
     provider: sops
-  postBuild:
-    substituteFrom:
-      - name: cluster-secrets
-        kind: Secret
   dependsOn:
     - name: external-secrets
   path: ./kubernetes/apps/external-secrets/external-secrets/stores
