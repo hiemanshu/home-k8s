@@ -1,0 +1,19 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: authelia
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: authelia
+  policyTypes:
+    - Ingress
+  ingress:
+    # the Envoy gateways live in the network namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: network
+      ports:
+        - port: 9091

@@ -12,3 +12,4 @@ resources:
   - ./postgres/ks.yaml
   - ./dragonfly/ks.yaml
   - ./lldap/ks.yaml
+  - ./authelia/ks.yaml

@@ -22,3 +22,8 @@ spec:
         login: true
         passwordSecret:
           name: lldap-db-password
+      - name: authelia
+        ensure: present
+        login: true
+        passwordSecret:
+          name: authelia-db-password

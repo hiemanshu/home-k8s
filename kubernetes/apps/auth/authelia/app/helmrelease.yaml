@@ -1,0 +1,87 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authelia
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: authelia
+  interval: 1h
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      authelia:
+        containers:
+          app:
+            image:
+              repository: ghcr.io/authelia/authelia
+              tag: 4.39.28
+            args:
+              - --config
+              - /config/configuration.yml
+            env:
+              # secret values are provided as files, never in the config
+              AUTHELIA_JWT_SECRET_FILE: /secrets/jwt_secret
+              AUTHELIA_SESSION_SECRET_FILE: /secrets/session_secret
+              AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /secrets/storage_encryption_key
+              AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE: /secrets/storage_password
+              AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE: /secrets/ldap_password
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: 9091
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: 9091
+    service:
+      authelia:
+        controller: authelia
+        ports:
+          http:
+            port: 9091
+    route:
+      authelia:
+        hostnames:
+          - "auth.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: authelia
+                port: 9091
+    persistence:
+      config:
+        type: configMap
+        name: authelia-config
+        globalMounts:
+          - path: /config/configuration.yml
+            subPath: configuration.yml
+            readOnly: true
+      secrets:
+        type: secret
+        name: authelia-secret
+        globalMounts:
+          - path: /secrets
+            readOnly: true
+      data:
+        type: emptyDir
+        globalMounts:
+          - path: /data
