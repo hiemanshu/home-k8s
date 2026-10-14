@@ -54,7 +54,7 @@ spec:
               # destination: Forgejo
               GITEA_URL: https://git.${SECRET_DOMAIN}
               GITEA_EXTERNAL_URL: https://git.${SECRET_DOMAIN}
-              GITEA_USERNAME: hiemanshu
+              GITEA_USERNAME: heems
               GITEA_CREATE_ORG: "true"
               GITEA_PRESERVE_VISIBILITY: "true"
               # scheduling
