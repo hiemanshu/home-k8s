@@ -6,9 +6,11 @@ metadata:
   name: dragonfly
 spec:
   replicas: 1
-  # static filename so snapshots don't accumulate on disk
+  # static filename so snapshots don't accumulate on disk;
+  # cap proactor threads (Dragonfly defaults to host CPU count -> needs 256MiB/thread)
   args:
     - --dbfilename=dump
+    - --proactor_threads=2
   resources:
     requests:
       cpu: 10m
