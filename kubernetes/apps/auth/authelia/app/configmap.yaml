@@ -8,7 +8,7 @@ data:
     ---
     theme: auto
     log:
-      level: info
+      level: debug
     server:
       address: tcp://0.0.0.0:9091
       endpoints:
