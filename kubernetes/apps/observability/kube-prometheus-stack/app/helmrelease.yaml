@@ -22,7 +22,28 @@ spec:
     crds:
       enabled: true
     alertmanager:
-      enabled: false
+      enabled: true
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 2Gi
+      config:
+        route:
+          receiver: ntfy
+          group_by: ["alertname"]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+        receivers:
+          - name: ntfy
+            webhook_configs:
+              - url: http://alertmanager-ntfy.observability.svc.cluster.local:8000
+                send_resolved: true
     grafana:
       enabled: true
       persistence:
@@ -48,6 +69,11 @@ spec:
           role_attribute_path: contains(groups[*], 'admins') && 'Admin' || 'Viewer'
       # oauth client secret via GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
       envFromSecret: grafana-oauth
+      additionalDataSources:
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki-gateway.observability.svc.cluster.local
     # Talos does not expose these control-plane components for scraping
     kubeEtcd:
       enabled: false

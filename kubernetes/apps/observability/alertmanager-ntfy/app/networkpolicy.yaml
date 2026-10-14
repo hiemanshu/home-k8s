@@ -1,0 +1,17 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alertmanager-ntfy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager-ntfy
+  policyTypes:
+    - Ingress
+  ingress:
+    # Alertmanager (same namespace) posts webhooks here
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 8000
