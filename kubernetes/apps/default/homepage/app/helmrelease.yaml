@@ -20,6 +20,9 @@ spec:
     enableRbac: true
     serviceAccount:
       create: true
+    controller:
+      annotations:
+        reloader.stakater.com/auto: "true"
     env:
       - name: HOMEPAGE_ALLOWED_HOSTS
         value: "home.${SECRET_DOMAIN}"
