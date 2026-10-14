@@ -16,6 +16,9 @@ spec:
       cpu: 10m
       memory: 128Mi
     limits:
+      # CPU limit bounds the cgroup quota, which Dragonfly uses to size its
+      # thread pool; without it, it defaults to host CPUs (80) and demands 20GiB.
+      cpu: "2"
       memory: 1Gi
   snapshot:
     cron: "*/30 * * * *"
