@@ -19,9 +19,9 @@ spec:
       - x-forwarded-proto
       - x-forwarded-host
     http:
-      # Envoy appends the original request path, so Authelia receives
-      # /api/authz/ext-authz/<original-path> (its expected "endpoint sub-path")
-      path: /api/authz/ext-authz
+      # Envoy appends the original request path; keep the trailing slash so
+      # Authelia's endpoint sub-path (its "original path") keeps its leading '/'
+      path: /api/authz/ext-authz/
       backendRefs:
         - name: authelia
           namespace: auth
