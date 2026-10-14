@@ -144,6 +144,10 @@ spec:
                 icon: forgejo.png
                 href: https://git.${SECRET_DOMAIN}
                 description: Git forge
+                widget:
+                  type: gitea
+                  url: http://forgejo-http.dev.svc.cluster.local:3000
+                  key: "{{HOMEPAGE_VAR_FORGEJO_TOKEN}}"
             - Mirror:
                 icon: gitea.png
                 href: https://mirror.${SECRET_DOMAIN}
