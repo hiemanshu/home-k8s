@@ -32,11 +32,10 @@ spec:
       grafana.ini:
         server:
           root_url: https://grafana.${SECRET_DOMAIN}
-        # OIDC-only: no local login form / basic auth
+        # OIDC-only for humans: hide the login form; basic auth stays enabled
+        # so the k8s-sidecars can authenticate to the API (dashboard/datasource import)
         auth:
           disable_login_form: true
-        auth.basic:
-          enabled: false
         auth.generic_oauth:
           enabled: true
           name: Authelia
