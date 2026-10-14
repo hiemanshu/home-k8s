@@ -58,6 +58,7 @@ spec:
           Monitoring:
           Identity:
           Dev:
+          Tools:
           Infrastructure:
       widgets:
         - kubernetes:
@@ -152,6 +153,11 @@ spec:
                 icon: gitea.png
                 href: https://mirror.${SECRET_DOMAIN}
                 description: GitHub → Forgejo mirror
+        - Tools:
+            - Zipline:
+                icon: zipline.png
+                href: https://share.${SECRET_DOMAIN}
+                description: File uploads & share links
         - Infrastructure:
             - Longhorn:
                 icon: longhorn.png
@@ -161,3 +167,8 @@ spec:
                 icon: ntfy.png
                 href: https://notify.${SECRET_DOMAIN}
                 description: Push notifications
+                widget:
+                  type: ntfy
+                  url: https://notify.${SECRET_DOMAIN}
+                  topic: alerts
+                  key: "{{HOMEPAGE_VAR_NTFY_TOKEN}}"
