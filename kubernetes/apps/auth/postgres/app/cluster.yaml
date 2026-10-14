@@ -10,7 +10,8 @@ spec:
     storageClass: longhorn
     size: 20Gi
   monitoring:
-    enablePodMonitor: true
+    # deprecated flag; we manage the PodMonitor ourselves (podmonitor.yaml)
+    enablePodMonitor: false
   bootstrap:
     initdb:
       database: app
