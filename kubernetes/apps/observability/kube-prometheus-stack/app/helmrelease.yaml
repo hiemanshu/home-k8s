@@ -24,7 +24,22 @@ spec:
     alertmanager:
       enabled: false
     grafana:
-      enabled: false
+      enabled: true
+      admin:
+        existingSecret: grafana-admin
+      persistence:
+        enabled: true
+        storageClassName: longhorn
+        size: 5Gi
+      grafana.ini:
+        server:
+          root_url: https://grafana.${SECRET_DOMAIN}
+        # trust the reverse-proxy (Authelia) header so there is no second login
+        auth.proxy:
+          enabled: true
+          header_name: Remote-User
+          header_property: username
+          auto_sign_up: true
     # Talos does not expose these control-plane components for scraping
     kubeEtcd:
       enabled: false
