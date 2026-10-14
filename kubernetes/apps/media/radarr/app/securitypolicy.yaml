@@ -19,11 +19,13 @@ spec:
       - x-forwarded-proto
       - x-forwarded-host
     http:
+      # Envoy appends the original request path, so Authelia receives
+      # /api/authz/ext-authz/<original-path> (its expected "endpoint sub-path")
+      path: /api/authz/ext-authz
       backendRefs:
         - name: authelia
           namespace: auth
           port: 9091
-          path: /api/authz/ext-authz/
       headersToBackend:
         - Remote-User
         - Remote-Groups
