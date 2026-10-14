@@ -35,6 +35,8 @@ spec:
               AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /secrets/storage_encryption_key
               AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE: /secrets/storage_password
               AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE: /secrets/ldap_password
+              # enable Go-template filters so the config can read the OIDC keys
+              X_AUTHELIA_CONFIG_FILTERS: template
             probes:
               startup:
                 enabled: true

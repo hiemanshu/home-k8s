@@ -34,12 +34,18 @@ spec:
       grafana.ini:
         server:
           root_url: https://grafana.${SECRET_DOMAIN}
-        # trust the reverse-proxy (Authelia) header so there is no second login
-        auth.proxy:
+        auth.generic_oauth:
           enabled: true
-          header_name: Remote-User
-          header_property: username
-          auto_sign_up: true
+          name: Authelia
+          allow_sign_up: true
+          client_id: grafana
+          scopes: openid profile email groups
+          auth_url: https://auth.${SECRET_DOMAIN}/api/oidc/authorization
+          token_url: https://auth.${SECRET_DOMAIN}/api/oidc/token
+          api_url: https://auth.${SECRET_DOMAIN}/api/oidc/userinfo
+          role_attribute_path: contains(groups[*], 'admins') && 'Admin' || 'Viewer'
+      # client secret via env (GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET) from the external secret
+      envFromSecret: grafana-admin
     # Talos does not expose these control-plane components for scraping
     kubeEtcd:
       enabled: false
