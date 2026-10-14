@@ -58,9 +58,9 @@ spec:
                   fail=0
                   while read -r app; do
                     [ -n "$app" ] || continue
-                    echo "== unlocking ${app} =="
-                    if ! restic --no-cache -r "${RESTIC_REPOSITORY}/${app}" unlock; then
-                      echo "unlock failed: ${app}"
+                    echo "== unlocking $${app} =="
+                    if ! restic --no-cache -r "$${RESTIC_REPOSITORY}/$${app}" unlock; then
+                      echo "unlock failed: $${app}"
                       fail=1
                     fi
                   done < /shared/apps
