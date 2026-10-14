@@ -13,3 +13,4 @@ resources:
   - ./postgres/ks.yaml
   - ./dragonfly/ks.yaml
   - ./forgejo/ks.yaml
+  - ./gitea-mirror/ks.yaml

@@ -1,0 +1,120 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gitea-mirror
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: gitea-mirror
+  interval: 1h
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      gitea-mirror:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/raylabshq/gitea-mirror
+              tag: v3.40.4
+            env:
+              NODE_ENV: production
+              HOST: 0.0.0.0
+              PORT: "4321"
+              DATABASE_URL: file:data/gitea-mirror.db
+              BETTER_AUTH_URL: https://mirror.${SECRET_DOMAIN}
+              PUBLIC_BETTER_AUTH_URL: https://mirror.${SECRET_DOMAIN}
+              BETTER_AUTH_TRUSTED_ORIGINS: https://mirror.${SECRET_DOMAIN}
+              # trust Authelia's forward-auth headers (route is on envoy-internal)
+              HEADER_AUTH_ENABLED: "true"
+              HEADER_AUTH_USER_HEADER: Remote-User
+              HEADER_AUTH_EMAIL_HEADER: Remote-Email
+              HEADER_AUTH_NAME_HEADER: Remote-Name
+              HEADER_AUTH_AUTO_PROVISION: "true"
+              # source: GitHub
+              SOURCE_PROVIDER: github
+              GITHUB_USERNAME: hiemanshu
+              GITHUB_TYPE: personal
+              PRIVATE_REPOSITORIES: "true"
+              PUBLIC_REPOSITORIES: "true"
+              INCLUDE_ARCHIVED: "true"
+              SKIP_FORKS: "true"
+              MIRROR_ORGANIZATIONS: "true"
+              PRESERVE_ORG_STRUCTURE: "true"
+              INCLUDE_ORGANIZATIONS: politics-rewired,recitalsoftware,fixthestatusquo,recital-ai
+              # destination: Forgejo
+              GITEA_URL: https://git.${SECRET_DOMAIN}
+              GITEA_EXTERNAL_URL: https://git.${SECRET_DOMAIN}
+              GITEA_USERNAME: hiemanshu
+              GITEA_CREATE_ORG: "true"
+              GITEA_PRESERVE_VISIBILITY: "true"
+              # scheduling
+              SCHEDULE_ENABLED: "true"
+              SCHEDULE_INTERVAL: "0 2 * * *"
+              GITEA_MIRROR_INTERVAL: 8h
+              AUTO_IMPORT_REPOS: "true"
+              AUTO_MIRROR_REPOS: "true"
+              TZ: Asia/Kolkata
+            envFrom:
+              - secretRef:
+                  name: gitea-mirror-secret
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: 4321
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: 4321
+                  initialDelaySeconds: 20
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: gitea-mirror
+        ports:
+          http:
+            port: 4321
+    route:
+      app:
+        hostnames: ["mirror.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 4321
+    persistence:
+      data:
+        existingClaim: gitea-mirror
+        globalMounts:
+          - path: /app/data
