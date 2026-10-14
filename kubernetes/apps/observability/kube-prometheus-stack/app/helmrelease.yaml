@@ -42,7 +42,7 @@ spec:
         receivers:
           - name: ntfy
             webhook_configs:
-              - url: http://alertmanager-ntfy.observability.svc.cluster.local:8000
+              - url: http://alertmanager-ntfy.observability.svc.cluster.local:8000/hook
                 send_resolved: true
     grafana:
       enabled: true
