@@ -12,3 +12,4 @@ resources:
   - ./postgres-secrets/ks.yaml
   - ./postgres/ks.yaml
   - ./dragonfly/ks.yaml
+  - ./forgejo/ks.yaml
