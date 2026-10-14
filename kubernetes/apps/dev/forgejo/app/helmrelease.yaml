@@ -75,13 +75,13 @@ spec:
           PROVIDER: redis
           PROVIDER_CONFIG: redis://dragonfly.dev.svc.cluster.local:6379/0?pool_size=100&idle_timeout=180s
           SESSION_LIFE_TIME: 1209600
-        # object storage (endpoint/bucket/keys come from the secret via env)
+        # object storage (endpoint/bucket/keys come from the secret via env).
+        # NOTE: do NOT add a [lfs]/[packages] override -- a subsystem section does
+        # not inherit MINIO_* from [storage], so LFS would get an empty endpoint.
         storage:
           STORAGE_TYPE: minio
           MINIO_USE_SSL: false
           MINIO_LOCATION: us-east-1
-        lfs:
-          STORAGE_TYPE: minio
         service:
           ALLOW_ONLY_EXTERNAL_REGISTRATION: true
           SHOW_REGISTRATION_BUTTON: false
