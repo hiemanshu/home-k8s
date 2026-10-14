@@ -1,0 +1,13 @@
+---
+# immich library on the NAS via the 'nfs' storageclass.
+# the nfs provisioner creates /volumes/media/immich (pathPattern).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: nfs
+  resources:
+    requests:
+      storage: 1Ti

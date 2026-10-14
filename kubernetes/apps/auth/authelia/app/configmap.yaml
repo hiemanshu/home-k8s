@@ -86,6 +86,9 @@ data:
         # Zipline self-gates via OIDC + upload API tokens.
         - domain: share.${SECRET_DOMAIN}
           policy: bypass
+        # Immich self-gates via OIDC (configured in its admin UI).
+        - domain: photos.${SECRET_DOMAIN}
+          policy: bypass
         # Dashboard: any authenticated user.
         - domain: home.${SECRET_DOMAIN}
           policy: one_factor
@@ -167,4 +170,27 @@ data:
             access_token_signed_response_alg: none
             userinfo_signed_response_alg: none
             token_endpoint_auth_method: client_secret_post
+            claims_policy: default
+          - client_id: immich
+            client_name: Immich
+            client_secret: {{ secret "/secrets/immich_oauth_client_secret" }}
+            public: false
+            authorization_policy: one_factor
+            require_pkce: true
+            pkce_challenge_method: S256
+            redirect_uris:
+              - https://photos.${SECRET_DOMAIN}/auth/login
+              - https://photos.${SECRET_DOMAIN}/user-settings
+              - app.immich:///oauth-callback
+            scopes:
+              - openid
+              - profile
+              - email
+            response_types:
+              - code
+            grant_types:
+              - authorization_code
+            access_token_signed_response_alg: none
+            userinfo_signed_response_alg: none
+            token_endpoint_auth_method: client_secret_basic
             claims_policy: default

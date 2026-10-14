@@ -1,0 +1,61 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: immich
+  interval: 1h
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # shared across all immich components
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              tag: v3.3.1
+            env:
+              REDIS_HOSTNAME: dragonfly.media.svc.cluster.local
+              DB_HOSTNAME: postgres-rw.media.svc.cluster.local
+              DB_USERNAME: immich
+              DB_DATABASE_NAME: immich
+              DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: immich-secret
+                    key: db-password
+    server:
+      enabled: true
+    machine-learning:
+      enabled: true
+      # run ONLY on the node with the Intel iGPU
+      nodeSelector:
+        intel.feature.node.kubernetes.io/gpu: "true"
+      controllers:
+        main:
+          containers:
+            main:
+              image:
+                tag: v3.3.1-openvino
+              resources:
+                limits:
+                  gpu.intel.com/i915: 1
+    # we use our own (media namespace) dragonfly instead
+    valkey:
+      enabled: false
+    immich:
+      metrics:
+        enabled: true
+      persistence:
+        library:
+          existingClaim: immich
