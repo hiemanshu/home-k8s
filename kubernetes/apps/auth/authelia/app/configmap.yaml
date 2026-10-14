@@ -92,6 +92,7 @@ data:
             - users.${SECRET_DOMAIN}
             - longhorn.${SECRET_DOMAIN}
             - secrets.${SECRET_DOMAIN}
+            - mirror.${SECRET_DOMAIN}
             - radarr.${SECRET_DOMAIN}
             - sonarr.${SECRET_DOMAIN}
             - prowlarr.${SECRET_DOMAIN}
