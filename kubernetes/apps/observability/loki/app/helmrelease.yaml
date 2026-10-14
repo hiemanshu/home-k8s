@@ -41,6 +41,13 @@ spec:
         enabled: true
         storageClass: longhorn
         size: 50Gi
+    # zero the SimpleScalable targets (chart defaults are 3) so the Monolithic validation passes
+    write:
+      replicas: 0
+    read:
+      replicas: 0
+    backend:
+      replicas: 0
     # trim components unused by a single-node Monolithic setup
     chunksCache:
       enabled: false
