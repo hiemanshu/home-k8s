@@ -25,7 +25,9 @@ spec:
             image:
               tag: v3.3.1
             env:
-              REDIS_HOSTNAME: dragonfly.media.svc.cluster.local
+              # Immich's BullMQ queue needs real Redis/Valkey semantics;
+              # Dragonfly rejects its Lua scripts ("undeclared key"). The chart
+              # bundles valkey, so leave REDIS_HOSTNAME at the chart default.
               DB_HOSTNAME: postgres-rw.media.svc.cluster.local
               DB_USERNAME: immich
               DB_DATABASE_NAME: immich
@@ -50,9 +52,9 @@ spec:
               resources:
                 limits:
                   gpu.intel.com/i915: 1
-    # we use our own (media namespace) dragonfly instead
+    # bundled valkey (real Redis semantics) -- Immich/BullMQ does not work on Dragonfly
     valkey:
-      enabled: false
+      enabled: true
     immich:
       metrics:
         enabled: true
