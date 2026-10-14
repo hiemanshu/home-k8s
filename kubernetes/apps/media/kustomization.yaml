@@ -16,4 +16,3 @@ resources:
   #   - ./jellyseerr/ks.yaml
   #   - ./tautulli/ks.yaml
   - ./plex/ks.yaml
-  - ./volsync-unlock/ks.yaml

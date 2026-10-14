@@ -4,17 +4,16 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app volsync-unlock
-  namespace: &namespace media
+  namespace: &namespace storage
 spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+    - name: volsync
+      namespace: *namespace
   interval: 1h
-  path: ./kubernetes/apps/media/volsync-unlock/app
-  postBuild:
-    substituteFrom:
-      - name: cluster-secrets
-        kind: Secret
+  path: ./kubernetes/apps/storage/volsync-unlock/app
   prune: true
   retryInterval: 2m
   sourceRef:

@@ -20,6 +20,34 @@ spec:
             app.kubernetes.io/name: volsync-unlock
         spec:
           restartPolicy: OnFailure
+          serviceAccountName: volsync-unlock
+          initContainers:
+            # Discover every restic repository from the deployed ReplicationSources,
+            # so new apps are covered automatically. The repository path is the sourcePVC name.
+            - name: discover
+              image: docker.io/alpine/k8s:1.36.5
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  kubectl get replicationsources.volsync.backube --all-namespaces \
+                    -o jsonpath='{range .items[*]}{.spec.sourcePVC}{"\n"}{end}' \
+                    | sort -u > /shared/apps
+                  echo "repositories:"
+                  cat /shared/apps
+              env:
+                - name: HOME
+                  value: /tmp
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: shared
+                  mountPath: /shared
+                - name: tmp
+                  mountPath: /tmp
           containers:
             - name: unlock
               image: docker.io/restic/restic:0.18.1
@@ -28,15 +56,15 @@ spec:
                 - |
                   set -eu
                   fail=0
-                  # One repo per app that uses the volsync component
-                  for app in plex prowlarr radarr sabnzbd sonarr; do
+                  while read -r app; do
+                    [ -n "$app" ] || continue
                     echo "== unlocking ${app} =="
                     if ! restic --no-cache -r "${RESTIC_REPOSITORY}/${app}" unlock; then
                       echo "unlock failed: ${app}"
                       fail=1
                     fi
-                  done
-                  exit "${fail}"
+                  done < /shared/apps
+                  exit "$fail"
               env:
                 - name: HOME
                   value: /tmp
@@ -55,8 +83,12 @@ spec:
                 limits:
                   memory: 128Mi
               volumeMounts:
+                - name: shared
+                  mountPath: /shared
                 - name: tmp
                   mountPath: /tmp
           volumes:
+            - name: shared
+              emptyDir: {}
             - name: tmp
               emptyDir: {}
