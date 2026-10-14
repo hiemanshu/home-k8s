@@ -57,6 +57,7 @@ spec:
           Media:
           Monitoring:
           Identity:
+          Dev:
           Infrastructure:
       widgets:
         - kubernetes:
@@ -138,6 +139,11 @@ spec:
                 icon: lldap.png
                 href: https://users.${SECRET_DOMAIN}
                 description: Users & groups
+        - Dev:
+            - Forgejo:
+                icon: forgejo.png
+                href: https://git.${SECRET_DOMAIN}
+                description: Git forge
         - Infrastructure:
             - Longhorn:
                 icon: longhorn.png
