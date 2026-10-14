@@ -25,8 +25,6 @@ spec:
       enabled: false
     grafana:
       enabled: true
-      admin:
-        existingSecret: grafana-admin
       persistence:
         enabled: true
         storageClassName: longhorn
@@ -34,6 +32,11 @@ spec:
       grafana.ini:
         server:
           root_url: https://grafana.${SECRET_DOMAIN}
+        # OIDC-only: no local login form / basic auth
+        auth:
+          disable_login_form: true
+        auth.basic:
+          enabled: false
         auth.generic_oauth:
           enabled: true
           name: Authelia
@@ -44,8 +47,8 @@ spec:
           token_url: https://auth.${SECRET_DOMAIN}/api/oidc/token
           api_url: https://auth.${SECRET_DOMAIN}/api/oidc/userinfo
           role_attribute_path: contains(groups[*], 'admins') && 'Admin' || 'Viewer'
-      # client secret via env (GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET) from the external secret
-      envFromSecret: grafana-admin
+      # oauth client secret via GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+      envFromSecret: grafana-oauth
     # Talos does not expose these control-plane components for scraping
     kubeEtcd:
       enabled: false
