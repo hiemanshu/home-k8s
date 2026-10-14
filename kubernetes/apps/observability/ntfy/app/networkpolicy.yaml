@@ -1,0 +1,24 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ntfy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ntfy
+  policyTypes:
+    - Ingress
+  ingress:
+    # the public gateway (envoy-external) lives in the network namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: network
+      ports:
+        - port: 80
+    # same-namespace publishers (alertmanager, grafana) and tailscale
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 80
