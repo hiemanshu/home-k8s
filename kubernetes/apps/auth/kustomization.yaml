@@ -11,3 +11,4 @@ resources:
   - ./namespace.yaml
   - ./postgres/ks.yaml
   - ./dragonfly/ks.yaml
+  - ./lldap/ks.yaml

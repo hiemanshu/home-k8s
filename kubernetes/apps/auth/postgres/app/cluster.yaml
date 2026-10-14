@@ -15,3 +15,10 @@ spec:
     initdb:
       database: app
       owner: app
+  managed:
+    roles:
+      - name: lldap
+        ensure: present
+        login: true
+        passwordSecret:
+          name: lldap-db-password
