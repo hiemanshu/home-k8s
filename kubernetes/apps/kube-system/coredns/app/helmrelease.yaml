@@ -52,6 +52,20 @@ spec:
           - name: log
             configBlock: |-
               class error
+      # forward internal <domain> lookups to AdGuard so pods can resolve
+      # internal hostnames (e.g. auth.<domain> for OIDC token exchange)
+      - zones:
+          - zone: ${SECRET_DOMAIN}.
+        port: 53
+        plugins:
+          - name: errors
+          - name: forward
+            parameters: . 192.168.69.101
+          - name: cache
+          - name: reload
+          - name: log
+            configBlock: |-
+              class error
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
