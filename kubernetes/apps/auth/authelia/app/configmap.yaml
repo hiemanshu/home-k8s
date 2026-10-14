@@ -80,6 +80,9 @@ data:
         # ntfy is intentionally public and enforces its own users/tokens.
         - domain: notify.${SECRET_DOMAIN}
           policy: bypass
+        # Forgejo self-gates via OIDC (Authelia is the IdP, not the edge gate).
+        - domain: git.${SECRET_DOMAIN}
+          policy: bypass
         # Dashboard: any authenticated user.
         - domain: home.${SECRET_DOMAIN}
           policy: one_factor
@@ -117,6 +120,20 @@ data:
             client_secret: {{ secret "/secrets/grafana_oauth_client_secret" }}
             redirect_uris:
               - https://grafana.${SECRET_DOMAIN}/login/generic_oauth
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+            authorization_policy: one_factor
+            pre_configured_consent_duration: 1y
+            userinfo_signed_response_alg: none
+            claims_policy: default
+          - client_id: forgejo
+            client_name: Forgejo
+            client_secret: {{ secret "/secrets/forgejo_oauth_client_secret" }}
+            redirect_uris:
+              - https://git.${SECRET_DOMAIN}/user/oauth2/authelia/callback
             scopes:
               - openid
               - profile
