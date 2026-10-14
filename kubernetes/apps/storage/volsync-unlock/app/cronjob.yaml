@@ -25,7 +25,7 @@ spec:
             # Discover every restic repository from the deployed ReplicationSources,
             # so new apps are covered automatically. The repository path is the sourcePVC name.
             - name: discover
-              image: docker.io/alpine/k8s:1.36.5
+              image: docker.io/alpine/k8s:1.37.1
               command: ["/bin/sh", "-c"]
               args:
                 - |
