@@ -59,6 +59,7 @@ spec:
           Identity:
           Dev:
           Tools:
+          Photos:
           Infrastructure:
       widgets:
         - kubernetes:
@@ -158,6 +159,16 @@ spec:
                 icon: zipline.png
                 href: https://share.${SECRET_DOMAIN}
                 description: File uploads & share links
+        - Photos:
+            - Immich:
+                icon: immich.png
+                href: https://photos.${SECRET_DOMAIN}
+                description: Photo library
+                widget:
+                  type: immich
+                  version: 2
+                  url: http://immich-server.media.svc.cluster.local:2283
+                  key: "{{HOMEPAGE_VAR_IMMICH_API_KEY}}"
         - Infrastructure:
             - Longhorn:
                 icon: longhorn.png
