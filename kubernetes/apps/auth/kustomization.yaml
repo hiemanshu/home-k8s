@@ -9,6 +9,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./postgres-secrets/ks.yaml
   - ./postgres/ks.yaml
   - ./dragonfly/ks.yaml
   - ./lldap/ks.yaml

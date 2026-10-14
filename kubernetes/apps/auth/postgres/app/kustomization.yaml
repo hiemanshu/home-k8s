@@ -5,5 +5,4 @@ kind: Kustomization
 resources:
   - ./cluster.yaml
   - ./database.yaml
-  - ./externalsecret.yaml
   - ./networkpolicy.yaml

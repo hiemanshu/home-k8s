@@ -9,6 +9,9 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+    - name: postgres-secrets
+      namespace: auth
   interval: 1h
   path: ./kubernetes/apps/auth/postgres/app
   postBuild:
