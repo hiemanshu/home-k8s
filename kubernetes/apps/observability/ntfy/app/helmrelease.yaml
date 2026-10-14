@@ -30,6 +30,9 @@ spec:
               - serve
             env:
               NTFY_BASE_URL: https://notify.${SECRET_DOMAIN}
+              # iOS push: forward poll requests to ntfy.sh (which is APNS-connected).
+              # Only the message ID is forwarded; content stays on our server.
+              NTFY_UPSTREAM_BASE_URL: "https://ntfy.sh"
               NTFY_CACHE_FILE: /var/lib/ntfy/cache.db
               NTFY_AUTH_FILE: /var/lib/ntfy/user.db
               NTFY_AUTH_DEFAULT_ACCESS: deny-all
