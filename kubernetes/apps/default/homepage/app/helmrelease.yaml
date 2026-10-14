@@ -23,6 +23,16 @@ spec:
     controller:
       annotations:
         reloader.stakater.com/auto: "true"
+    persistence:
+      custom-css:
+        enabled: true
+        type: custom
+        volumeSpec:
+          configMap:
+            name: homepage-custom-css
+        subPath:
+          - path: custom.css
+            mountPath: /app/config/custom.css
     env:
       - name: HOMEPAGE_ALLOWED_HOSTS
         value: "home.${SECRET_DOMAIN}"

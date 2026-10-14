@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-custom-css
+data:
+  custom.css: |
+    /* --------------------------------------------------------------------
+       Tokyo Night (Night) palette over the built-in `zinc` theme.
+       Homepage exposes its palette as RGB triplets in --color-50..900 and
+       puts the `theme-<color>` class on <html>; html.theme-zinc wins on
+       specificity regardless of stylesheet load order.
+       -------------------------------------------------------------------- */
+    html.theme-zinc {
+      --color-50: 255 255 255;
+      --color-100: 192 202 245;  /* #c0caf5 fg            */
+      --color-200: 192 202 245;  /* #c0caf5               */
+      --color-300: 169 177 214;  /* #a9b1d6               */
+      --color-400: 115 122 162;  /* #737aa2               */
+      --color-500: 122 162 247;  /* #7aa2f7 blue accent   */
+      --color-600: 65 72 104;    /* #414868               */
+      --color-700: 41 46 66;     /* #292e42               */
+      --color-800: 26 27 38;     /* #1a1b26 page bg       */
+      --color-900: 31 35 53;     /* #1f2335 card bg       */
+
+      --color-logo-start: 122 162 247;  /* blue    */
+      --color-logo-stop: 187 154 247;   /* magenta */
+    }
+
+    /* ~10% larger text (rem-based, so spacing scales along with it) */
+    html {
+      font-size: 110%;
+    }
