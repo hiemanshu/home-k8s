@@ -10,9 +10,16 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    # any pod in the auth namespace (authelia); more consumers added later
+    # any pod in the auth namespace (authelia)
     - from:
         - podSelector: {}
       ports:
         - port: 3890
+        - port: 17170
+    # the internal gateway fronts the lldap web UI
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: network
+      ports:
         - port: 17170

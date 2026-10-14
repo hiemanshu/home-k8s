@@ -56,3 +56,15 @@ spec:
             port: 3890
           http:
             port: 17170
+    route:
+      ldap:
+        hostnames:
+          - "ldap.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: ldap
+                port: 17170
