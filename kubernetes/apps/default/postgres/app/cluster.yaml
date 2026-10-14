@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/postgresql.cnpg.io/cluster_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+spec:
+  instances: 1
+  storage:
+    storageClass: longhorn
+    size: 10Gi
+  monitoring:
+    # deprecated flag; we manage the PodMonitor ourselves (podmonitor.yaml)
+    enablePodMonitor: false
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+  managed:
+    roles:
+      - name: zipline
+        ensure: present
+        login: true
+        passwordSecret:
+          name: zipline-db-password
