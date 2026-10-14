@@ -1,0 +1,104 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homepage
+spec:
+  chart:
+    spec:
+      chart: homepage
+      version: 2.1.0
+      sourceRef:
+        kind: HelmRepository
+        name: homepage
+        namespace: default
+  interval: 1h
+  values:
+    image:
+      tag: v2.5.0
+    enableRbac: true
+    serviceAccount:
+      create: true
+    config:
+      kubernetes:
+        mode: cluster
+        gateway: true
+      settingsString: |
+        title: heems.dev
+        headerStyle: boxed
+        layout:
+          Media:
+          Monitoring:
+          Identity:
+          Infrastructure:
+      widgets:
+        - kubernetes:
+            cluster:
+              show: true
+              cpu: true
+              memory: true
+              showLabel: true
+              label: cluster
+            nodes:
+              show: true
+              cpu: true
+              memory: true
+              showLabel: true
+        - resources:
+            backend: resources
+            expanded: true
+            cpu: true
+            memory: true
+        - search:
+            provider: duckduckgo
+            target: _blank
+      services:
+        - Media:
+            - Plex:
+                icon: plex.png
+                href: https://plex.${SECRET_DOMAIN}
+                description: Media server
+            - Radarr:
+                icon: radarr.png
+                href: https://radarr.${SECRET_DOMAIN}
+                description: Movies
+            - Sonarr:
+                icon: sonarr.png
+                href: https://sonarr.${SECRET_DOMAIN}
+                description: TV
+            - Prowlarr:
+                icon: prowlarr.png
+                href: https://prowlarr.${SECRET_DOMAIN}
+                description: Indexers
+            - SABnzbd:
+                icon: sabnzbd.png
+                href: https://sabnzbd.${SECRET_DOMAIN}
+                description: Usenet
+        - Monitoring:
+            - Grafana:
+                icon: grafana.png
+                href: https://grafana.${SECRET_DOMAIN}
+                description: Metrics & logs
+            - Gatus:
+                icon: gatus.png
+                href: https://status.${SECRET_DOMAIN}
+                description: Status page
+        - Identity:
+            - Authelia:
+                icon: authelia.png
+                href: https://auth.${SECRET_DOMAIN}
+                description: SSO portal
+            - LLDAP:
+                icon: lldap.png
+                href: https://users.${SECRET_DOMAIN}
+                description: Users & groups
+        - Infrastructure:
+            - Longhorn:
+                icon: longhorn.png
+                href: https://longhorn.${SECRET_DOMAIN}
+                description: Storage
+            - ntfy:
+                icon: ntfy.png
+                href: https://notify.${SECRET_DOMAIN}
+                description: Push notifications
