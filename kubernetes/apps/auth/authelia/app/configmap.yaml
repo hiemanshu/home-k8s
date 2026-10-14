@@ -71,3 +71,5 @@ data:
       rules:
         - domain: auth.${SECRET_DOMAIN}
           policy: bypass
+        - domain: radarr.${SECRET_DOMAIN}
+          policy: one_factor
