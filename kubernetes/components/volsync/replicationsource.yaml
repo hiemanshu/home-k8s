@@ -16,6 +16,7 @@ spec:
       runAsUser: ${VOLSYNC_PUID:-568}
     pruneIntervalDays: 7
     repository: "${APP}-volsync-minio-secret"
+    unlock: true
     cacheStorageClassName: "${VOLSYNC_CACHE_STORAGECLASS:-longhorn-cache}"
     retain:
       daily: 7
