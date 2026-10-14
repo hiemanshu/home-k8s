@@ -35,6 +35,16 @@ spec:
               AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE: /secrets/storage_password
               AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE: /secrets/ldap_password
             probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: 9091
+                  periodSeconds: 5
+                  timeoutSeconds: 3
+                  failureThreshold: 30
               liveness:
                 enabled: true
                 custom: true
