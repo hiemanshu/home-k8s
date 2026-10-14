@@ -24,6 +24,8 @@ data:
       disable: false
       enable_passkey_login: true
       display_name: Authelia
+    ntp:
+      address: 'udp://pool.ntp.org:123'
     authentication_backend:
       refresh_interval: 1m
       password_reset:
