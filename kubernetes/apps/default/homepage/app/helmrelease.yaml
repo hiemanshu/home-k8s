@@ -32,7 +32,14 @@ spec:
         gateway: true
       settingsString: |
         title: heems.dev
+        theme: dark
+        color: zinc
+        font: plex
         headerStyle: boxed
+        cardStyle: hairline
+        blockStyle: refined
+        statusStyle: dot
+        useEqualHeights: true
         layout:
           Media:
           Monitoring:
