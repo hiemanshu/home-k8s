@@ -10,6 +10,7 @@ components:
 resources:
   - ./namespace.yaml
   - ./longhorn/ks.yaml
+  - ./nfs-provisioner/ks.yaml
   - ./snapshot-controller/ks.yaml
   - ./volsync/ks.yaml
   - ./volsync-unlock/ks.yaml
