@@ -1,0 +1,61 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# Backup alerting. The Alertmanager root route already sends everything to ntfy,
+# so no labels are needed to reach it -- and Prometheus selects every
+# PrometheusRule in the cluster (ruleSelectorNilUsesHelmValues: false).
+#
+# These read the CloudNativePG collector metrics, which the per-cluster
+# PodMonitor already scrapes. Note that `Backup` custom resources are NOT usable
+# for this: CNPG garbage-collects them once they complete, so `kubectl get
+# backup` is usually empty even when backups are running fine.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg-backups
+spec:
+  groups:
+    - name: cnpg.backups
+      rules:
+        # The failure that actually bites. A ScheduledBackup that quietly stops
+        # running emits no failure at all, so nothing else would catch it -- and
+        # WAL archiving continuing happily makes it look healthy from every other
+        # angle.
+        - alert: CNPGNoRecentBackup
+          expr: |
+            time() - cnpg_collector_last_available_backup_timestamp > 86400
+              and cnpg_collector_last_available_backup_timestamp > 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              No successful CNPG base backup in 24h ({{ $labels.namespace }}/{{ $labels.cluster }})
+            description: >-
+              Point-in-time recovery needs a recent base backup to anchor the WAL
+              stream; WAL alone cannot restore.
+
+        - alert: CNPGBackupFailed
+          expr: |
+            cnpg_collector_last_failed_backup_timestamp
+              > cnpg_collector_last_available_backup_timestamp
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              CNPG backup failed ({{ $labels.namespace }}/{{ $labels.cluster }})
+
+        # A healthy cluster keeps this at or near zero: WAL segments waiting to be
+        # archived. Sustained growth means PITR is silently falling behind.
+        - alert: CNPGWalArchivingStalled
+          expr: |
+            cnpg_collector_pg_wal_archive_status{value="ready"} > 5
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: >-
+              CNPG WAL archiving stalled ({{ $labels.namespace }}/{{ $labels.cluster }})
+            description: >-
+              WAL segments are accumulating unarchived, so the point-in-time
+              recovery window is shrinking.
