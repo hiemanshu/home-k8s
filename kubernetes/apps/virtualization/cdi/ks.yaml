@@ -1,0 +1,29 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# CDI (Containerized Data Importer) provides the DataVolume/Datasource machinery
+# for importing VM images and ISOs. Vendored from its release manifest, pinned:
+#
+#   curl -fsSL -o operator.yaml \
+#     https://github.com/kubevirt/containerized-data-importer/releases/download/<ver>/cdi-operator.yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app cdi
+  namespace: &namespace virtualization
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: kubevirt
+      namespace: virtualization
+  interval: 1h
+  path: ./kubernetes/apps/virtualization/cdi/app
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 10m
+  wait: true

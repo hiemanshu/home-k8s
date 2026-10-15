@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# KubeVirt's operator, vendored from its release manifest and pinned. No Helm
+# chart exists (the community one is a 6-star repo), so this is the project's own
+# documented install. To upgrade:
+#
+#   curl -fsSL -o operator.yaml \
+#     https://github.com/kubevirt/kubevirt/releases/download/<ver>/kubevirt-operator.yaml
+#
+# No targetNamespace: the manifest declares its own (kubevirt) and names it in
+# RoleBinding subjects, which kustomize's namespace transformer would not rewrite.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app kubevirt
+  namespace: &namespace virtualization
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  path: ./kubernetes/apps/virtualization/kubevirt/app
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 10m
+  wait: true

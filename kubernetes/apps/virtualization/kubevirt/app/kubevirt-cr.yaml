@@ -1,0 +1,17 @@
+---
+# The KubeVirt CR, which tells the operator to deploy the actual control plane.
+# Fields mirror the upstream kubevirt-cr.yaml; /dev/kvm is present on the nodes,
+# so no extra device config is needed.
+apiVersion: kubevirt.io/v1
+kind: KubeVirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+spec:
+  certificateRotateStrategy: {}
+  configuration:
+    developerConfiguration:
+      featureGates: []
+  customizeComponents: {}
+  imagePullPolicy: IfNotPresent
+  workloadUpdateStrategy: {}

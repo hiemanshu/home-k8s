@@ -1,0 +1,20 @@
+---
+# The CDI CR, which tells its operator to deploy the import/clone/upload
+# machinery. Upstream's fields plus an explicit scratch space class -- imports and
+# clones need scratch storage, and leaving it unset makes CDI guess.
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: CDI
+metadata:
+  name: cdi
+spec:
+  config:
+    featureGates:
+      - HonorWaitForFirstConsumer
+    scratchSpaceStorageClass: longhorn
+  imagePullPolicy: IfNotPresent
+  infra:
+    nodeSelector:
+      kubernetes.io/os: linux
+  workload:
+    nodeSelector:
+      kubernetes.io/os: linux
