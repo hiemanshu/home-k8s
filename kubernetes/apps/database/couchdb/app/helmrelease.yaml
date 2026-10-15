@@ -25,10 +25,21 @@ spec:
     # restart when the admin secret changes (reloader watches referenced secrets)
     annotations:
       reloader.stakater.com/auto: "true"
-    # couchdb requires a fixed cluster uuid for single-node installs
+    # couchdb requires a fixed cluster uuid for single-node installs; the rest
+    # are the settings Obsidian LiveSync's "check server requirements" wants.
     couchdbConfig:
       couchdb:
         uuid: 14b2bf86-d3fd-4e25-a24b-789173dc7a1f
+        max_document_size: "50000000"
+      chttpd:
+        require_valid_user: "true"
+        enable_cors: "true"
+        max_http_request_size: "4294967296"
+      httpd:
+        WWW-Authenticate: 'Basic realm="administrator"'
+      cors:
+        credentials: "true"
+        origins: "app://obsidian.md,capacitor://localhost,http://localhost"
     persistentVolume:
       enabled: true
       size: 10Gi
@@ -37,9 +48,6 @@ spec:
       type: ClusterIP
       externalPort: 5984
       targetPort: 5984
-    # Obsidian LiveSync (and its "check server requirements") talks to it over
-    # the browser request API, so allow CORS.
-    enableCORS: true
     resources:
       requests:
         cpu: 10m
