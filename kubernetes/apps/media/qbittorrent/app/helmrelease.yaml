@@ -42,8 +42,10 @@ spec:
                 echo "$V" > "$D/.version"
                 chown -R 568:568 "$D"
             securityContext:
-              # apk needs root; the files are chowned to 568 afterwards
+              # apk needs root; the files are chowned to 568 afterwards.
+              # container-level runAsNonRoot:false overrides the pod-level true.
               runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
