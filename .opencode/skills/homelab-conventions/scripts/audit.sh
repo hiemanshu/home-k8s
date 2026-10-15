@@ -68,6 +68,11 @@ note_ "checked $(routed_apps | wc -l | tr -d ' ') routed apps (infrastructure is
 head_ "2. images pinned with a version AND a manifest-list digest"
 unpinned=""
 for hr in $(find "$APPS" -name helmrelease.yaml -path '*/app/*' 2>/dev/null | sort); do
+  # A chart may take the digest in its own `digest:` field rather than appended to
+  # the tag (forgejo's does). Either counts as pinned.
+  if grep -qE '^\s+digest: sha256:' "$hr"; then
+    continue
+  fi
   # Only consider `tag:` lines that belong to an image block. A `tag:` under
   # `ref:` is an OCIRepository chart reference, not a container image -- e.g.
   # storage/volsync, whose helmrelease.yaml also carries its OCIRepository.
