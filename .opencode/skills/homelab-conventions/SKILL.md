@@ -170,6 +170,8 @@ trains the user to ignore the audit.
 | `opencloud` is a public OIDC client without PKCE | Accepted risk, see decisions §8.1 |
 | Plaintext OIDC client secrets | Known Phase 5 debt |
 | `readOnlyRootFilesystem` on an app not yet proven | Convention applied proactively; iterate if it crashloops |
+| `obsidian-couchdb` has no `readOnlyRootFilesystem` | The official CouchDB image's entrypoint writes into `/opt/couchdb/etc` at startup |
+| `obsidian-couchdb` is a statefulset with a hand-written HTTPRoute | LiveSync's `_changes` feed needs a 300s route timeout, which app-template's `route` block does not expose |
 | `longhorn`, `flux-instance` have no reloader annotation | Routed, but infrastructure — nothing of ours to reload, and restarting them on a config change is harmful |
 | `node-feature-discovery/app/` has no `kustomization.yaml` | kustomize builds a directory implicitly; the file is optional |
 
