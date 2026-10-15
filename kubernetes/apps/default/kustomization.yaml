@@ -15,4 +15,5 @@ resources:
   - ./homepage/ks.yaml
   - ./zipline/ks.yaml
   - ./kutt/ks.yaml
+  - ./valkey/ks.yaml
   - ./opencloud/ks.yaml

@@ -8,8 +8,10 @@
 # and every other app in this namespace uses it, so this needs no PVC and the
 # database lands under the existing backup + WAL archiving.
 #
-# Redis is left off deliberately -- it is optional in Kutt and only caches. Adding a
-# Dragonfly for a link shortener is not worth another datastore.
+# Redis is required in practice. Kutt's own clients (redis.js, queues.js) are gated
+# on REDIS_ENABLED, but its rate limiter builds a Redis store at startup regardless,
+# so with Redis off the app dies connecting to 127.0.0.1:6379. The `valkey` app in
+# this namespace provides it.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -86,7 +88,13 @@ spec:
                   secretKeyRef:
                     name: kutt-secret
                     key: JWT_SECRET
-              REDIS_ENABLED: "false"
+              # Required in practice. Kutt's own clients (redis.js, queues.js) are
+              # gated on this flag, but its rate limiter builds a Redis store at
+              # startup regardless -- with Redis off the app dies connecting to
+              # 127.0.0.1:6379. The `valkey` app in this namespace provides it.
+              REDIS_ENABLED: "true"
+              REDIS_HOST: valkey.default.svc.cluster.local
+              REDIS_PORT: "6379"
               # The whole point: only an authenticated user may create a link, while
               # the redirect itself stays public.
               DISALLOW_ANONYMOUS_LINKS: "true"

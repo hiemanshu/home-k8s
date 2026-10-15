@@ -18,6 +18,8 @@ spec:
   dependsOn:
     - name: postgres
       namespace: default
+    - name: valkey
+      namespace: default
   interval: 1h
   path: ./kubernetes/apps/default/kutt/app
   prune: true
