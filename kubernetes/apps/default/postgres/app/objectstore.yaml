@@ -20,10 +20,10 @@ spec:
     destinationPath: s3://${S3_BUCKET}/default
     s3Credentials:
       accessKeyId:
-        name: cnpg-s3-secret
+        name: s3-secrets
         key: ACCESS_KEY_ID
       secretAccessKey:
-        name: cnpg-s3-secret
+        name: s3-secrets
         key: ACCESS_SECRET_KEY
     wal:
       compression: gzip

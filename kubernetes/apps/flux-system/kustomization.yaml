@@ -10,6 +10,3 @@ resources:
   - ./namespace.yaml
   - ./flux-instance/ks.yaml
   - ./flux-operator/ks.yaml
-  # creates the Secret that every Kustomization substitutes from, so it has to
-  # exist before the rest reconcile
-  - ./s3-secrets/ks.yaml

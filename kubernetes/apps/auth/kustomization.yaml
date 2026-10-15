@@ -6,6 +6,7 @@ namespace: auth
 
 components:
   - ../../components/sops
+  - ../../components/s3-secrets
 
 resources:
   - ./namespace.yaml
