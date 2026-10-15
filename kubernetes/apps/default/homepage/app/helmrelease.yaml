@@ -135,6 +135,14 @@ spec:
                   type: sabnzbd
                   url: http://sabnzbd.media.svc.cluster.local:80
                   key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
+            - qBittorrent:
+                icon: qbittorrent.png
+                href: https://downloads.${SECRET_DOMAIN}
+                description: Torrents
+                widget:
+                  type: qbittorrent
+                  url: http://qbittorrent.media.svc.cluster.local:8080
+                  key: "{{HOMEPAGE_VAR_QBITTORRENT_API_KEY}}"
         - Monitoring:
             - Grafana:
                 icon: grafana.png
