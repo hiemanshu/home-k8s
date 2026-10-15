@@ -84,7 +84,14 @@ spec:
         type: configMap
         name: obsidian-couchdb-configmap
         globalMounts:
-          - path: /opt/couchdb/etc/local.d
+          # Mounted as a single FILE, not over the directory. The official
+          # entrypoint runs `touch /opt/couchdb/etc/local.d/docker.ini` under
+          # `set -e` ("this is where runtime configuration changes will be
+          # written"), so that directory must stay writable -- mounting the
+          # ConfigMap over the whole of local.d makes it read-only and kills the
+          # container at startup. The file itself can be read-only.
+          - path: /opt/couchdb/etc/local.d/config.ini
+            subPath: config.ini
       data:
         existingClaim: obsidian-couchdb
         advancedMounts:
