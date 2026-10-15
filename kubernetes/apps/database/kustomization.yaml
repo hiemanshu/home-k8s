@@ -11,5 +11,4 @@ resources:
   - ./namespace.yaml
   - ./cloudnative-pg/ks.yaml
   - ./dragonfly-operator/ks.yaml
-  - ./couchdb-secrets/ks.yaml
-  - ./couchdb/ks.yaml
+  - ./obsidian-couchdb/ks.yaml

@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecret.yaml
+  - ./helmrelease.yaml
+  - ./httproute.yaml
+  - ./ocirepository.yaml
+configMapGenerator:
+  - files:
+      - config.ini=./resources/config.ini
+    name: obsidian-couchdb-configmap
+generatorOptions:
+  # the ini is CouchDB's, not a template -- keep Flux out of it, and keep the name
+  # stable so the HelmRelease can reference it without a hash suffix
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+  disableNameSuffixHash: true
