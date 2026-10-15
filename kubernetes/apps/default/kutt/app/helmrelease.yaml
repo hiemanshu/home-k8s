@@ -35,7 +35,7 @@ spec:
           app:
             image:
               repository: kutt/kutt
-              tag: 2.7.2@sha256:1cca90918a81b531cc2771f5bb7a76db8a26ffe49bc6cd262ccd8c1e1f51f3bb
+              tag: v2.7.4@sha256:2fa9480755229bd9a14ea03fb2129eb80412600f3c5dabc8f9f9fbf35ff88fce
             env:
               TZ: Asia/Kolkata
               PORT: &port 3000
