@@ -41,9 +41,6 @@ spec:
       - --webhook-provider-url=http://localhost:8888
       # internal routes only (Cloudflare instance handles envoy-external)
       - --gateway-name=envoy-internal
-      # never touch `external.<domain>` -- that's the cloudflare tunnel origin
-      # (and a local rewrite managed by adguard-dns-external)
-      - --exclude-domains=external.${SECRET_DOMAIN}
     policy: sync
     # gateway-httproute only: do NOT read DNSEndpoints, or we'd mirror the
     # cloudflare tunnel's `external.<domain>` CNAME and clobber the local name
