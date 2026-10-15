@@ -18,6 +18,7 @@ resources:
   - ./vuetorrent/ks.yaml
   - ./prowlarr/ks.yaml
   - ./sabnzbd/ks.yaml
+  - ./bazarr/ks.yaml
   #   - ./jellyseerr/ks.yaml
   #   - ./tautulli/ks.yaml
   - ./plex/ks.yaml
