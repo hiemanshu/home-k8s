@@ -189,6 +189,37 @@ Beyond rule violations, look for:
   `homelab-implementation-plan.md` still marked open for things now built (or
   claiming something verified that the evidence no longer supports).
 
+## Debugging traps in this repo
+
+Learned the hard way; check these before assuming a fix "didn't work".
+
+- **A crashlooping app rejects its own fix.** Flux's HelmRelease waits for
+  resources to become Ready, and `upgrade.remediation.retries` + `cleanupOnFail`
+  means a failed upgrade gets **rolled back** to the previous revision. So a fix
+  for a broken app never lands: the app stays broken, so the upgrade keeps
+  failing, so the fix keeps getting reverted. Escape by forcing an *install*
+  (`kubectl delete hr <name> -n <ns>` — the install path has `retries: -1` and no
+  rollback, and any PVC owned by the volsync component survives), or by setting
+  `disableWait: true` on that release. If a change appears not to apply, check
+  `flux get hr` for a failed/stalled state *before* debugging the manifest.
+- **`Completed` / exit code 0 with a suspiciously exact restart interval is a
+  failing liveness probe**, not a crash. Kubelet sends SIGTERM, a well-behaved
+  app exits 0, and the interval equals `initialDelaySeconds + failureThreshold ×
+  periodSeconds`. Confirm with `kubectl describe pod` → `Last State`, then check
+  whether the probe path is reachable without credentials.
+- **Never put an HTTP probe on an endpoint that requires auth.** CouchDB's
+  `/_up` answers `401` under `require_valid_user` (the auth check runs before the
+  path-based bypass in `chttpd_auth_request`), and returns `404` while
+  `mem3_seeds` is seeding on a fresh volume. Use `tcpSocket` for a liveness check
+  — it asserts what you actually mean ("the process is listening").
+- **Check the image's uid and what its entrypoint writes before forcing
+  securityContext values.** `opencloud` runs as `1000`; the *arr images as `568`;
+  CouchDB's entrypoint writes `local.d/docker.ini` under `set -e`, so that
+  directory must stay writable — mount config as a `subPath` *file*, not over the
+  directory.
+- **Reconcile every affected Kustomization.** Each app has its own, so
+  `flux reconcile ks <one>` does not cover another namespace.
+
 ## Reporting
 
 Lead with the highest-severity finding, not the first one you found. Severity order:
