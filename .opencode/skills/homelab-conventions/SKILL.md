@@ -231,6 +231,16 @@ Learned the hard way; check these before assuming a fix "didn't work".
 - **The Homepage dashboard is hand-maintained**, so it drifts as apps are added —
   a new app is invisible on the dashboard until someone adds a card. Check it
   after every new app.
+- **Restoring a CNPG cluster with the barman plugin needs the SOURCE server name
+  in the plugin parameters, not the ObjectStore.** The plugin resolves it as
+  `externalClusters[].plugin.parameters.serverName`, falling back to the *target*
+  cluster's name (`internal/cnpgi/restore/restore.go`). The ObjectStore's
+  `configuration.serverName` is not consulted on this path. Get it wrong and the
+  plugin lists the bucket successfully, reports `backupCatalog:[]` and fails with
+  `no target backup found` — which reads exactly like the backups don't exist,
+  when really it looked in a folder named after the cluster being created.
+  Since barman folders are named after the source cluster, a restore into a
+  differently-named cluster always needs this.
 
 ## Reporting
 
