@@ -20,3 +20,14 @@ spec:
   name: kutt
   owner: kutt
   ensure: present
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: opengist
+spec:
+  cluster:
+    name: postgres
+  name: opengist
+  owner: opengist
+  ensure: present

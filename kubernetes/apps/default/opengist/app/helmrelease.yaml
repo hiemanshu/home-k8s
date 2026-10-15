@@ -1,0 +1,129 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# Opengist 1.15.2. Go binary; pastes are git repositories under /opengist, which is
+# the PVC the volsync component owns (existingClaim below).
+#
+# Postgres rather than the SQLite default, to match every other SQL-backed app in this
+# namespace: the database then lands under the existing CNPG backup and WAL archiving,
+# while volsync covers the git repos. The SQLite file would otherwise be the only copy.
+#
+# SSH git access is disabled -- only HTTP, and that is the route we expose.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opengist
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: opengist
+  interval: 1h
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      opengist:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/thomiceli/opengist
+              tag: 1.15.2@sha256:7edc91273ee7d10a17406da8a08c803158baaff984c39b789c1313473d068f21
+            env:
+              TZ: Asia/Kolkata
+              # the image's entrypoint uses these to own /opengist; keep them equal to
+              # the pod securityContext below so it is a no-op rather than a surprise
+              UID: "1000"
+              GID: "1000"
+              OG_EXTERNAL_URL: https://paste.${SECRET_DOMAIN}
+              OG_DB_URI:
+                valueFrom:
+                  secretKeyRef:
+                    name: opengist-secret
+                    key: DB_URI
+              OG_SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: opengist-secret
+                    key: SECRET_KEY
+              OG_HTTP_PORT: &port 6157
+              OG_METRICS_ENABLED: "true"
+              OG_METRICS_PORT: &metricsPort 6158
+              OG_SSH_GIT_ENABLED: disabled
+              # OIDC: Authelia is the IdP, Opengist is the gate (the edge is `bypass`).
+              OG_OIDC_PROVIDER_NAME: Authelia
+              OG_OIDC_CLIENT_KEY: opengist
+              OG_OIDC_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: opengist-secret
+                    key: OIDC_CLIENT_SECRET
+              OG_OIDC_DISCOVERY_URL: https://auth.${SECRET_DOMAIN}/.well-known/openid-configuration
+              # the group claim Authelia sends, and the group that gets admin rights
+              OG_OIDC_GROUP_CLAIM_NAME: groups
+              OG_OIDC_ADMIN_GROUP: admins
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: opengist
+        ports:
+          http:
+            port: *port
+          metrics:
+            port: *metricsPort
+    route:
+      app:
+        hostnames: ["paste.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      # owned by the volsync component, so create is false and the claim is named
+      # after the app -- which is also what gives a recreate its restore-from-backup
+      data:
+        existingClaim: opengist
+        globalMounts:
+          - path: /opengist
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

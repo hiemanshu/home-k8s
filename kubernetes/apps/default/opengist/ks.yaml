@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# Opengist: pastebin at paste.${SECRET_DOMAIN}.
+#
+# Same model as Kutt -- public route (envoy-external) with NO edge auth, because a
+# paste is useless if only you can open it. Opengist gates itself with Authelia OIDC
+# instead, and oidc.admin-group maps group:admins onto its admin flag. So:
+# authenticated creates, public/unlisted pastes readable by anyone with the link.
+#
+# volsync because pastes are stored as git repositories on disk -- same shape as
+# Forgejo, whose bare repos also live on a Longhorn PVC.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app opengist
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  components:
+    - ../../../../components/volsync
+  dependsOn:
+    - name: postgres
+      namespace: default
+  interval: 1h
+  path: ./kubernetes/apps/default/opengist/app
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 5Gi
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 10m
+  wait: true

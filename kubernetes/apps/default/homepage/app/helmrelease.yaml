@@ -175,6 +175,10 @@ spec:
                 icon: kutt.png
                 href: https://url.${SECRET_DOMAIN}
                 description: URL shortener
+            - Opengist:
+                icon: opengist.png
+                href: https://paste.${SECRET_DOMAIN}
+                description: Pastebin
         - Monitoring:
             - Grafana:
                 icon: grafana.png

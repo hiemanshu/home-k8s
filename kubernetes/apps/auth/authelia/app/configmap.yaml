@@ -112,6 +112,11 @@ data:
         # plus DISALLOW_LOGIN_FORM), not here.
         - domain: url.${SECRET_DOMAIN}
           policy: bypass
+        # Opengist, same reasoning: pastes are shared by link, so the edge cannot gate
+        # the route or nobody could read one. Creation is gated inside Opengist via
+        # OIDC + oidc.admin-group.
+        - domain: paste.${SECRET_DOMAIN}
+          policy: bypass
         # Dashboard: any authenticated user.
         - domain: home.${SECRET_DOMAIN}
           policy: one_factor
@@ -202,6 +207,27 @@ data:
               - subject: 'group:admins'
                 policy: one_factor
         clients:
+          - client_id: opengist
+            client_name: Opengist
+            client_secret: {{ secret "/secrets/opengist_oauth_client_secret" }}
+            # Opengist's own callback path -- /oauth/openid-connect/callback, NOT the
+            # /api/auth/... shape the other apps use. It also exposes
+            # /oauth/gitea/callback, which is what a Forgejo-as-IdP setup would use.
+            redirect_uris:
+              - https://paste.${SECRET_DOMAIN}/oauth/openid-connect/callback
+            scopes:
+              - openid
+              - profile
+              - email
+              # required for oidc.group-claim-name: groups
+              - groups
+            # Group scoping happens here because the edge is `bypass`. `admins`
+            # matches "only an authenticated admin may create a paste"; swap to
+            # `tools` to also allow group:tools -- one word.
+            authorization_policy: admins
+            pre_configured_consent_duration: 1y
+            userinfo_signed_response_alg: none
+            claims_policy: default
           - client_id: kutt
             client_name: Kutt
             client_secret: {{ secret "/secrets/kutt_oauth_client_secret" }}
