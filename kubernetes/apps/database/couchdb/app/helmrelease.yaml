@@ -22,6 +22,9 @@ spec:
     # createAdminSecret: false the chart reads them all from that Secret, so
     # there's no adminUsername/adminPassword here to drift.
     createAdminSecret: false
+    # restart when the admin secret changes (reloader watches referenced secrets)
+    annotations:
+      reloader.stakater.com/auto: "true"
     # couchdb requires a fixed cluster uuid for single-node installs
     couchdbConfig:
       couchdb:
