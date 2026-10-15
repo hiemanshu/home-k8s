@@ -17,10 +17,10 @@ parameters:
 # needs live migration, so single-copy local data is the right call, and keeping the
 # replica on the VM's own node avoids a network hop on every read.
 #
-# WaitForFirstConsumer is required here, not cosmetic: with dataLocality: strict the
-# volume must be created on the node the pod will run on, and only the scheduler
-# knows which that is. longhorn-cache above is Immediate because a volsync cache has
-# no such constraint.
+# WaitForFirstConsumer is required here, not cosmetic: with dataLocality:
+# strict-local the volume must be created on the node the pod will run on, and only
+# the scheduler knows which that is. longhorn-cache above is Immediate because a
+# volsync cache has no such constraint.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -35,5 +35,9 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 parameters:
-  dataLocality: strict
+  # `strict-local`, not `strict`. Longhorn 1.11 accepts only disabled, best-effort
+  # and strict-local, and an unknown value makes volume creation fail validation --
+  # the PVC never binds and every consumer waits forever on a volume that will never
+  # exist. strict-local requires numberOfReplicas 1, which is set below.
+  dataLocality: strict-local
   numberOfReplicas: "1"
