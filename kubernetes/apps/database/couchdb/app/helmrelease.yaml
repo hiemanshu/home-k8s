@@ -18,9 +18,10 @@ spec:
     # single node
     clusterSize: 1
     allowAdminParty: false
-    # credentials come from the ExternalSecret (couchdb-couchdb)
+    # credentials come from the ExternalSecret (couchdb-couchdb); with
+    # createAdminSecret: false the chart reads them all from that Secret, so
+    # there's no adminUsername/adminPassword here to drift.
     createAdminSecret: false
-    adminUsername: couchadmin
     # couchdb requires a fixed cluster uuid for single-node installs
     couchdbConfig:
       couchdb:
