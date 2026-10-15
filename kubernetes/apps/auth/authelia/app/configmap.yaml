@@ -68,8 +68,18 @@ data:
         database: authelia
         username: authelia
     notifier:
-      filesystem:
-        filename: /data/notification.txt
+      # Shared SMTP (1Password item `smtp`, Fastmail). Every value except the
+      # identifier comes from the secret so the item stays the single source.
+      # NOTE: Authelia validates SMTP at startup and EXITS if the check fails,
+      # so a bad credential here takes auth (and therefore every app) down until
+      # the secret is corrected -- reloader then restarts it.
+      smtp:
+        address: 'submissions://{{ secret "/secrets/smtp_host" }}:{{ secret "/secrets/smtp_port" }}'
+        username: '{{ secret "/secrets/smtp_username" }}'
+        password: '{{ secret "/secrets/smtp_password" }}'
+        sender: '{{ secret "/secrets/smtp_from" }}'
+        identifier: ${SECRET_DOMAIN}
+        subject: '[Authelia] {title}'
     access_control:
       # Default deny. Nothing internal is reachable unless a rule below grants it.
       # NOTE: apps that gate themselves with their own OIDC against Authelia get
