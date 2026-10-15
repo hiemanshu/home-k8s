@@ -1,0 +1,18 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alloy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: alloy
+  policyTypes:
+    - Ingress
+  ingress:
+    # Alloy scrapes and pushes outward, so its own ingress is only Prometheus
+    # scraping its metrics from the same namespace.
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 12345

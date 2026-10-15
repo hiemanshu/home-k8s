@@ -1,0 +1,17 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alertmanager
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+  policyTypes:
+    - Ingress
+  ingress:
+    # Prometheus pushes alerts, Grafana queries it -- both same namespace.
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 9093
