@@ -39,6 +39,35 @@ spec:
             env:
               TZ: Asia/Kolkata
               PORT: &port 3000
+              SITE_NAME: Kutt
+              # Kutt's startup validation requires MAIL_* to be present and exits 1
+              # otherwise -- it does not care that mail is off. Nothing needs to send:
+              # OIDC is the only login path and registration is disabled. Values come
+              # from the shared `smtp` item via the secret.
+              MAIL_ENABLED: "false"
+              MAIL_HOST:
+                valueFrom:
+                  secretKeyRef:
+                    name: kutt-secret
+                    key: SMTP_HOST
+              MAIL_PORT:
+                valueFrom:
+                  secretKeyRef:
+                    name: kutt-secret
+                    key: SMTP_PORT
+              MAIL_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: kutt-secret
+                    key: SMTP_USERNAME
+              MAIL_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: kutt-secret
+                    key: SMTP_PASSWORD
+              MAIL_SECURE: "true"
+              # senders are no-reply@<subdomain>.<domain>, never the app's name
+              MAIL_FROM: no-reply@url.${SECRET_DOMAIN}
               # getSiteURL() builds https://<DEFAULT_DOMAIN> in production, which is
               # both the OIDC redirect base and how short URLs are rendered.
               DEFAULT_DOMAIN: url.${SECRET_DOMAIN}
@@ -139,3 +168,12 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+      # `npm run migrate` runs through @babel/register, which mkdirs its cache under
+      # node_modules before the migration itself. With the rootfs read-only that
+      # fails with ENOENT and the container crashloops before the server ever binds,
+      # so this is the one path that has to be writable. Giving it a mount keeps
+      # readOnlyRootFilesystem on rather than dropping it for the whole container.
+      babelcache:
+        type: emptyDir
+        globalMounts:
+          - path: /usr/src/app/node_modules/.cache
