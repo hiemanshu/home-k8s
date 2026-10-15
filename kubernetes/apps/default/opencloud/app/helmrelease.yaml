@@ -29,7 +29,7 @@ spec:
           app:
             image:
               repository: docker.io/opencloudeu/opencloud-rolling
-              tag: 8.1.0
+              tag: 8.1.0@sha256:8fc64ca861739cc62095cd558814f2eba6a90acf5998d884e439b33a47875da8
             # `init` writes the generated config on first run and fails on every
             # later run, so the error is swallowed before starting the server.
             command:
