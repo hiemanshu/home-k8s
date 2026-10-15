@@ -77,7 +77,7 @@ data:
         address: 'submissions://{{ secret "/secrets/smtp_host" }}:{{ secret "/secrets/smtp_port" }}'
         username: '{{ secret "/secrets/smtp_username" }}'
         password: '{{ secret "/secrets/smtp_password" }}'
-        sender: 'no-reply-auth@${SECRET_DOMAIN}'
+        sender: 'no-reply@auth.${SECRET_DOMAIN}'
         identifier: ${SECRET_DOMAIN}
         subject: '[Authelia] {title}'
     access_control:
