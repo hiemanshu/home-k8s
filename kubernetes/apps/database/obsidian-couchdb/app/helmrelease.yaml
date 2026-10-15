@@ -49,12 +49,18 @@ spec:
               - secretRef:
                   name: obsidian-couchdb-secret
             probes:
+              # TCP, deliberately, not an HTTP probe on /_up. Verified from
+              # CouchDB's own log: under require_valid_user it answers the probe
+              # with "GET /_up 401", so liveness failed and killed the container at
+              # exactly 10s + 6x10s. (/_up also returns 404 while mem3_seeds is
+              # seeding, which a fresh volume is doing right when the probe fires.)
+              # A socket probe only asserts the process is listening -- which is
+              # all a database's liveness check should claim.
               liveness: &probes
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /_up
+                  tcpSocket:
                     port: &port 5984
                   initialDelaySeconds: 10
                   periodSeconds: 10
