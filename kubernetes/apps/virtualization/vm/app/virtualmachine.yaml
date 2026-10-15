@@ -18,6 +18,11 @@ spec:
       labels:
         kubevirt.io/domain: test1
     spec:
+      # All VMs live on gandalf for now. The disk's replica does not have to be
+      # there -- longhorn-vm is best-effort, so the volume attaches from wherever
+      # the VM runs.
+      nodeSelector:
+        kubernetes.io/hostname: gandalf
       domain:
         cpu:
           cores: 2

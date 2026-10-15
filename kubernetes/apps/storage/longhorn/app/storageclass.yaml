@@ -17,10 +17,9 @@ parameters:
 # needs live migration, so single-copy local data is the right call, and keeping the
 # replica on the VM's own node avoids a network hop on every read.
 #
-# WaitForFirstConsumer is required here, not cosmetic: with dataLocality:
-# strict-local the volume must be created on the node the pod will run on, and only
-# the scheduler knows which that is. longhorn-cache above is Immediate because a
-# volsync cache has no such constraint.
+# WaitForFirstConsumer is required here, not cosmetic: it makes the volume follow
+# the pod's node at creation time rather than being placed arbitrarily.
+# longhorn-cache above is Immediate because a volsync cache has no such constraint.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -35,9 +34,15 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 parameters:
-  # `strict-local`, not `strict`. Longhorn 1.11 accepts only disabled, best-effort
-  # and strict-local, and an unknown value makes volume creation fail validation --
-  # the PVC never binds and every consumer waits forever on a volume that will never
-  # exist. strict-local requires numberOfReplicas 1, which is set below.
-  dataLocality: strict-local
+  # best-effort, not strict-local. strict-local hard-pins the volume to the node of
+  # its first consumer -- which for a VM disk is CDI's importer pod, and CDI offers
+  # no way to control where that lands (CDIConfig only has `infra` selectors, and
+  # the import controller only honours a node selector for VDDK). So the disk would
+  # end up on whichever node the scheduler happened to pick for the import, and a VM
+  # pinned elsewhere could never attach it: a displaced strict-local replica is
+  # marked Stopped rather than moved.
+  #
+  # best-effort still keeps a single replica and still prefers the workload's node,
+  # but does not hard-pin, so the volume stays attachable from wherever the VM runs.
+  dataLocality: best-effort
   numberOfReplicas: "1"
