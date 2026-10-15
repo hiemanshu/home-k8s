@@ -2,10 +2,10 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: adguard-dns
+  name: adguard-dns-internal
 spec:
   interval: 1h
-  path: ./kubernetes/apps/network/adguard-dns/app
+  path: ./kubernetes/apps/network/adguard-dns-internal/app
   prune: true
   sourceRef:
     kind: GitRepository

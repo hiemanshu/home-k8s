@@ -3,17 +3,17 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: adguard-dns
+  name: adguard-dns-internal
 spec:
   chartRef:
     kind: OCIRepository
-    name: adguard-dns
+    name: adguard-dns-internal
   interval: 1h
   install:
     remediation:
       retries: -1
   values:
-    fullnameOverride: adguard-dns
+    fullnameOverride: adguard-dns-internal
     provider:
       name: webhook
       webhook:
@@ -44,7 +44,7 @@ spec:
       # internal routes only (Cloudflare instance handles envoy-external)
       - --gateway-name=envoy-internal
       # never touch `external.<domain>` -- that's the cloudflare tunnel origin
-      # (and a local rewrite managed by adguard-dns-external)
+      # (and a local rewrite managed by adguard-dns-internal-external)
       - --exclude-domains=external.${SECRET_DOMAIN}
     policy: sync
     sources: ["crd", "gateway-httproute"]

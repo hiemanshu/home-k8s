@@ -39,7 +39,7 @@ spec:
     extraArgs:
       # the webhook provider API listens on the sidecar's localhost:8888
       - --webhook-provider-url=http://localhost:8888
-      # external routes only; adguard-dns handles envoy-internal. AdGuard gets
+      # external routes only; adguard-dns-internal handles envoy-internal. AdGuard gets
       # `<app> -> CNAME external.<domain>` which resolves locally to the
       # envoy-external IP.
       - --gateway-name=envoy-external

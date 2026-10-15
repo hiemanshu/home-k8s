@@ -5,7 +5,7 @@ metadata:
   name: adguard-dns-external
 spec:
   dependsOn:
-    - name: adguard-dns
+    - name: adguard-dns-internal
       namespace: network
   interval: 1h
   path: ./kubernetes/apps/network/adguard-dns-external/app
