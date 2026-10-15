@@ -2,6 +2,12 @@
 # The CDI CR, which tells its operator to deploy the import/clone/upload
 # machinery. Upstream's fields plus an explicit scratch space class -- imports and
 # clones need scratch storage, and leaving it unset makes CDI guess.
+#
+# Scratch is the VM class, not the 3-replica default: it is throwaway working space
+# for an import, so single-copy and local is both faster and cheaper. The
+# HonorWaitForFirstConsumer gate above is what makes a WaitForFirstConsumer scratch
+# class safe -- without it CDI creates the scratch PVC before the importer pod
+# exists, and an unbound WFFC volume would stall the import.
 apiVersion: cdi.kubevirt.io/v1beta1
 kind: CDI
 metadata:
@@ -10,7 +16,7 @@ spec:
   config:
     featureGates:
       - HonorWaitForFirstConsumer
-    scratchSpaceStorageClass: longhorn
+    scratchSpaceStorageClass: longhorn-vm
   imagePullPolicy: IfNotPresent
   infra:
     nodeSelector:

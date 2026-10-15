@@ -10,3 +10,25 @@ volumeBindingMode: Immediate
 parameters:
   dataLocality: disabled
   numberOfReplicas: "1"
+---
+# VM disks: one replica, kept on the node the VM runs on. Deliberately not the
+# 3-replica default -- these are mostly test VMs, and the accepted trade-off is that
+# losing a node loses that node's VMs until they are restored from backup. Nothing
+# needs live migration, so single-copy local data is the right call, and keeping the
+# replica on the VM's own node avoids a network hop on every read.
+#
+# WaitForFirstConsumer is required here, not cosmetic: with dataLocality: strict the
+# volume must be created on the node the pod will run on, and only the scheduler
+# knows which that is. longhorn-cache above is Immediate because a volsync cache has
+# no such constraint.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-vm
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  dataLocality: strict
+  numberOfReplicas: "1"
