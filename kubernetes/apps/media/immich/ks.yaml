@@ -10,8 +10,6 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: dragonfly
-      namespace: media
     - name: postgres
       namespace: media
     - name: nfs-provisioner
