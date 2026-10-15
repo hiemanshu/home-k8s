@@ -6,4 +6,6 @@ resources:
   - ./cluster.yaml
   - ./database.yaml
   - ./networkpolicy.yaml
+  - ./objectstore.yaml
   - ./podmonitor.yaml
+  - ./scheduledbackup.yaml
