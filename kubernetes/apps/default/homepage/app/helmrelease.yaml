@@ -59,10 +59,10 @@ spec:
             url: http://longhorn-frontend.storage.svc.cluster.local
         layout:
           Media:
-          Monitoring:
-          Identity:
-          Dev:
           Tools:
+          Monitoring:
+          Dev:
+          Identity:
           Photos:
           Infrastructure:
       widgets:
@@ -154,6 +154,19 @@ spec:
                   type: bazarr
                   url: http://bazarr.media.svc.cluster.local:6767
                   key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+        - Tools:
+            - Zipline:
+                icon: zipline.png
+                href: https://share.${SECRET_DOMAIN}
+                description: File uploads & share links
+            - OpenCloud:
+                icon: opencloud.png
+                href: https://files.${SECRET_DOMAIN}
+                description: Files & shares
+            - Kutt:
+                icon: kutt.png
+                href: https://url.${SECRET_DOMAIN}
+                description: URL shortener
         - Monitoring:
             - Grafana:
                 icon: grafana.png
@@ -173,19 +186,6 @@ spec:
                 icon: kubevirt.png
                 href: https://virt.${SECRET_DOMAIN}
                 description: Virtual machines
-            - Kutt:
-                icon: kutt.png
-                href: https://url.${SECRET_DOMAIN}
-                description: URL shortener
-        - Identity:
-            - Authelia:
-                icon: authelia.png
-                href: https://auth.${SECRET_DOMAIN}
-                description: SSO portal
-            - LLDAP:
-                icon: lldap.png
-                href: https://users.${SECRET_DOMAIN}
-                description: Users & groups
         - Dev:
             - Forgejo:
                 icon: forgejo.png
@@ -199,15 +199,15 @@ spec:
                 icon: gitea.png
                 href: https://mirror.${SECRET_DOMAIN}
                 description: GitHub → Forgejo mirror
-        - Tools:
-            - Zipline:
-                icon: zipline.png
-                href: https://share.${SECRET_DOMAIN}
-                description: File uploads & share links
-            - OpenCloud:
-                icon: opencloud.png
-                href: https://files.${SECRET_DOMAIN}
-                description: Files & shares
+        - Identity:
+            - Authelia:
+                icon: authelia.png
+                href: https://auth.${SECRET_DOMAIN}
+                description: SSO portal
+            - LLDAP:
+                icon: lldap.png
+                href: https://users.${SECRET_DOMAIN}
+                description: Users & groups
         - Photos:
             - Immich:
                 icon: immich.png
