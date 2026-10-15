@@ -171,7 +171,27 @@ while IFS= read -r line; do
   esac
 done < <(grep -rn 'sender:' "$APPS" --include='*.yaml' 2>/dev/null)
 
-head_ "10. cleanup sweep"
+head_ "10. Homepage coverage (dashboard is hand-maintained, so it drifts)"
+HP="$APPS/default/homepage/app/helmrelease.yaml"
+if [ -f "$HP" ] && [ -n "${gw_map:-}" ]; then
+  hp_hosts="$(grep -oE 'href: https://[a-z0-9-]+\.\$\{SECRET_DOMAIN\}' "$HP" \
+              | sed -E 's|.*https://||;s|\.\$\{SECRET_DOMAIN\}||' | sort -u)"
+  for h in $(lines "$gw_map" | awk '{print $1}'); do
+    printf '%s\n' "$hp_hosts" | grep -qx "$h" || note_ "route '$h' has no Homepage card"
+  done
+  for h in $(lines "$hp_hosts"); do
+    printf '%s\n' "$gw_map" | awk '{print $1}' | grep -qx "$h" || \
+      note_ "Homepage lists '$h' but no route declares it (stale card?)"
+  done
+  # widgets: a card without one is often just a missing API key
+  cards=$(grep -cE '^            - [A-Za-z].*:$' "$HP" 2>/dev/null || echo 0)
+  widgets=$(grep -cE '^                  type: ' "$HP" 2>/dev/null || echo 0)
+  note_ "$cards cards, $widgets widgets -- check for cards whose app supports a widget but has none"
+else
+  note_ "could not read $HP"
+fi
+
+head_ "11. cleanup sweep"
 for f in $(grep -rl '^\s*#\s*- \./.*ks.yaml' "$APPS" --include=kustomization.yaml 2>/dev/null); do
   note_ "$(rel "$f") has commented-out ks entries:"
   grep -E '^\s*#\s*- \./' "$f" | sed 's/^/             /'

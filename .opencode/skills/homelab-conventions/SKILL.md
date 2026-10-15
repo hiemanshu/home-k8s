@@ -219,6 +219,18 @@ Learned the hard way; check these before assuming a fix "didn't work".
   directory.
 - **Reconcile every affected Kustomization.** Each app has its own, so
   `flux reconcile ks <one>` does not cover another namespace.
+- **`postBuild.substituteFrom` resolves the Secret in the Kustomization's OWN
+  namespace.** A Secret that exists only in `flux-system` is invisible to a
+  Kustomization elsewhere — which is why `cluster-secrets` is injected into every
+  namespace by the `components/sops` component rather than living in one place.
+  Any shared substitution source must be a component added per namespace. And be
+  careful with `optional: true`: it turns "the Secret is missing" into a silent
+  no-op, so the manifest is applied with a literal `${VAR}` in it. That is exactly
+  how a CNPG `ObjectStore` was once rejected by CRD validation with no error
+  anywhere except the object simply not existing.
+- **The Homepage dashboard is hand-maintained**, so it drifts as apps are added —
+  a new app is invisible on the dashboard until someone adds a card. Check it
+  after every new app.
 
 ## Reporting
 
