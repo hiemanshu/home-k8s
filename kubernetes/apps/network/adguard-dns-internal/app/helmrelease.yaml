@@ -39,15 +39,15 @@ spec:
     extraArgs:
       # the webhook provider API listens on the sidecar's localhost:8888
       - --webhook-provider-url=http://localhost:8888
-      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
-      - --crd-source-kind=DNSEndpoint
       # internal routes only (Cloudflare instance handles envoy-external)
       - --gateway-name=envoy-internal
       # never touch `external.<domain>` -- that's the cloudflare tunnel origin
-      # (and a local rewrite managed by adguard-dns-internal-external)
+      # (and a local rewrite managed by adguard-dns-external)
       - --exclude-domains=external.${SECRET_DOMAIN}
     policy: sync
-    sources: ["crd", "gateway-httproute"]
+    # gateway-httproute only: do NOT read DNSEndpoints, or we'd mirror the
+    # cloudflare tunnel's `external.<domain>` CNAME and clobber the local name
+    sources: ["gateway-httproute"]
     txtPrefix: k8s.
     txtOwnerId: adguard
     domainFilters: ["${SECRET_DOMAIN}"]
