@@ -53,6 +53,9 @@ spec:
         blockStyle: refined
         statusStyle: dot
         useEqualHeights: true
+        providers:
+          longhorn:
+            url: http://longhorn-frontend.storage.svc.cluster.local
         layout:
           Media:
           Monitoring:
@@ -87,6 +90,11 @@ spec:
             format:
               timeStyle: short
               dateStyle: short
+        - longhorn:
+            expanded: true
+            total: true
+            nodes: true
+            labels: true
       services:
         - Media:
             - Plex:
@@ -183,3 +191,12 @@ spec:
                   url: https://notify.${SECRET_DOMAIN}
                   topic: alerts
                   key: "{{HOMEPAGE_VAR_NTFY_TOKEN}}"
+            - AdGuard:
+                icon: adguard-home.png
+                href: http://192.168.69.101
+                description: DNS
+                widget:
+                  type: adguard
+                  url: "{{HOMEPAGE_VAR_ADGUARD_URL}}"
+                  username: "{{HOMEPAGE_VAR_ADGUARD_USER}}"
+                  password: "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}"
