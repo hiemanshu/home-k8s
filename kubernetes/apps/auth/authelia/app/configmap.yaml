@@ -154,6 +154,37 @@ data:
               - email_verified
               - preferred_username
               - name
+        authorization_policies:
+          # The OIDC apps are `bypass` at the edge, so group scoping has to
+          # happen here rather than in access_control. Default deny + one group
+          # rule = tool-scoped access. Every policy also allows group:admins so
+          # an admin can never lock themselves out of a tool.
+          dev:
+            default_policy: deny
+            rules:
+              - subject:
+                  - 'group:dev'
+                  - 'group:admins'
+                policy: one_factor
+          media:
+            default_policy: deny
+            rules:
+              - subject:
+                  - 'group:media'
+                  - 'group:admins'
+                policy: one_factor
+          tools:
+            default_policy: deny
+            rules:
+              - subject:
+                  - 'group:tools'
+                  - 'group:admins'
+                policy: one_factor
+          admins:
+            default_policy: deny
+            rules:
+              - subject: 'group:admins'
+                policy: one_factor
         clients:
           - client_id: grafana
             client_name: Grafana
@@ -165,7 +196,7 @@ data:
               - profile
               - email
               - groups
-            authorization_policy: one_factor
+            authorization_policy: admins
             pre_configured_consent_duration: 1y
             userinfo_signed_response_alg: none
             claims_policy: default
@@ -179,7 +210,7 @@ data:
               - profile
               - email
               - groups
-            authorization_policy: one_factor
+            authorization_policy: dev
             pre_configured_consent_duration: 1y
             userinfo_signed_response_alg: none
             claims_policy: default
@@ -198,7 +229,7 @@ data:
             grant_types:
               - refresh_token
               - authorization_code
-            authorization_policy: one_factor
+            authorization_policy: tools
             pre_configured_consent_duration: 1y
             access_token_signed_response_alg: none
             userinfo_signed_response_alg: none
@@ -208,7 +239,7 @@ data:
             client_name: Immich
             client_secret: {{ secret "/secrets/immich_oauth_client_secret" }}
             public: false
-            authorization_policy: one_factor
+            authorization_policy: media
             require_pkce: true
             pkce_challenge_method: S256
             redirect_uris:
@@ -233,7 +264,7 @@ data:
           - client_id: opencloud
             client_name: OpenCloud
             public: true
-            authorization_policy: one_factor
+            authorization_policy: tools
             redirect_uris:
               - https://files.${SECRET_DOMAIN}/
               - https://files.${SECRET_DOMAIN}/oidc-callback.html
