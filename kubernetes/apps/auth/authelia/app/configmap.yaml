@@ -89,6 +89,9 @@ data:
         # Immich self-gates via OIDC (configured in its admin UI).
         - domain: photos.${SECRET_DOMAIN}
           policy: bypass
+        # OpenCloud self-gates via OIDC (Authelia is the IdP, not the edge gate).
+        - domain: files.${SECRET_DOMAIN}
+          policy: bypass
         # Dashboard: any authenticated user.
         - domain: home.${SECRET_DOMAIN}
           policy: one_factor
@@ -194,4 +197,29 @@ data:
             access_token_signed_response_alg: none
             userinfo_signed_response_alg: none
             token_endpoint_auth_method: client_secret_basic
+            claims_policy: default
+          # OpenCloud Web is a browser SPA: a public client with no secret.
+          # OpenCloud does not send a PKCE challenge, so PKCE must stay off.
+          # The three redirect URIs match OpenCloud's own Keycloak client def.
+          - client_id: opencloud
+            client_name: OpenCloud
+            public: true
+            authorization_policy: one_factor
+            redirect_uris:
+              - https://files.${SECRET_DOMAIN}/
+              - https://files.${SECRET_DOMAIN}/oidc-callback.html
+              - https://files.${SECRET_DOMAIN}/oidc-silent-redirect.html
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+            response_types:
+              - code
+            grant_types:
+              - authorization_code
+              - refresh_token
+            access_token_signed_response_alg: none
+            userinfo_signed_response_alg: none
+            token_endpoint_auth_method: none
             claims_policy: default
