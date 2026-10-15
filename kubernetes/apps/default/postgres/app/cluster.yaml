@@ -23,6 +23,11 @@ spec:
         login: true
         passwordSecret:
           name: zipline-db-password
+      - name: kutt
+        ensure: present
+        login: true
+        passwordSecret:
+          name: kutt-db-password
   # The barman-cloud plugin provides object-store backups with WAL archiving,
   # i.e. point-in-time recovery. NOTE: enabling a plugin rolls the Postgres
   # instances, because the plugin also runs as a sidecar inside the instance

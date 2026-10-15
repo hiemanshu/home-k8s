@@ -14,4 +14,5 @@ resources:
   - ./echo/ks.yaml
   - ./homepage/ks.yaml
   - ./zipline/ks.yaml
+  - ./kutt/ks.yaml
   - ./opencloud/ks.yaml

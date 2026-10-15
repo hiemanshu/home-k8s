@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# Kutt: URL shortener at url.${SECRET_DOMAIN}.
+#
+# Public route (envoy-external) with NO edge auth, because short links have to
+# resolve for anonymous visitors -- `app.get("/:id")` is the redirect. Kutt gates
+# itself with Authelia OIDC instead, and DISALLOW_ANONYMOUS_LINKS means only an
+# authenticated user can create one. So: authenticated creates, public reads.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app kutt
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: postgres
+      namespace: default
+  interval: 1h
+  path: ./kubernetes/apps/default/kutt/app
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: true

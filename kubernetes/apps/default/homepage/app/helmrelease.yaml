@@ -173,6 +173,10 @@ spec:
                 icon: kubevirt.png
                 href: https://virt.${SECRET_DOMAIN}
                 description: Virtual machines
+            - Kutt:
+                icon: kutt.png
+                href: https://url.${SECRET_DOMAIN}
+                description: URL shortener
         - Identity:
             - Authelia:
                 icon: authelia.png

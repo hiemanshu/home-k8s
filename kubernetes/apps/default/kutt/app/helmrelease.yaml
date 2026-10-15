@@ -1,0 +1,141 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# Kutt 2.7.2. Node/express; the image runs `npm run migrate && npm start`, so a
+# startup probe is here to cover the migration step rather than let liveness kill
+# it mid-startup.
+#
+# Postgres rather than Kutt's SQLite default: `default` already runs a CNPG cluster
+# and every other app in this namespace uses it, so this needs no PVC and the
+# database lands under the existing backup + WAL archiving.
+#
+# Redis is left off deliberately -- it is optional in Kutt and only caches. Adding a
+# Dragonfly for a link shortener is not worth another datastore.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kutt
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: kutt
+  interval: 1h
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      kutt:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: kutt/kutt
+              tag: 2.7.2@sha256:1cca90918a81b531cc2771f5bb7a76db8a26ffe49bc6cd262ccd8c1e1f51f3bb
+            env:
+              TZ: Asia/Kolkata
+              PORT: &port 3000
+              # getSiteURL() builds https://<DEFAULT_DOMAIN> in production, which is
+              # both the OIDC redirect base and how short URLs are rendered.
+              DEFAULT_DOMAIN: url.${SECRET_DOMAIN}
+              DB_CLIENT: pg
+              DB_HOST: postgres-rw.default.svc.cluster.local
+              DB_PORT: "5432"
+              DB_NAME: kutt
+              DB_USER: kutt
+              DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: kutt-secret
+                    key: DB_PASSWORD
+              JWT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: kutt-secret
+                    key: JWT_SECRET
+              REDIS_ENABLED: "false"
+              # The whole point: only an authenticated user may create a link, while
+              # the redirect itself stays public.
+              DISALLOW_ANONYMOUS_LINKS: "true"
+              # No self-signup and no password form -- Authelia OIDC is the only way in.
+              DISALLOW_REGISTRATION: "true"
+              DISALLOW_LOGIN_FORM: "true"
+              OIDC_ENABLED: "true"
+              OIDC_ISSUER: https://auth.${SECRET_DOMAIN}
+              OIDC_CLIENT_ID: kutt
+              OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: kutt-secret
+                    key: OIDC_CLIENT_SECRET
+              OIDC_SCOPE: openid profile email
+              OIDC_EMAIL_CLAIM: email
+              OIDC_BUTTON_TEXT: Log in with Authelia
+            probes:
+              # `npm run migrate` runs before the server binds, so hold liveness off
+              # until /api/v2/health actually answers.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/health
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 30
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/health
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: kutt
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames: ["url.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
