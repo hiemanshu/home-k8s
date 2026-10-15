@@ -68,13 +68,25 @@ note_ "checked $(routed_apps | wc -l | tr -d ' ') routed apps (infrastructure is
 head_ "2. images pinned with a version AND a manifest-list digest"
 unpinned=""
 for hr in $(find "$APPS" -name helmrelease.yaml -path '*/app/*' 2>/dev/null | sort); do
+  # Only consider `tag:` lines that belong to an image block. A `tag:` under
+  # `ref:` is an OCIRepository chart reference, not a container image -- e.g.
+  # storage/volsync, whose helmrelease.yaml also carries its OCIRepository.
   while IFS= read -r tag; do
     [ -n "$tag" ] || continue
     case "$tag" in
       *@sha256:*) : ;;
       *) unpinned="$unpinned$(rel "$hr")  $tag"$'\n' ;;
     esac
-  done < <(grep -E '^\s+tag: ' "$hr" | sed 's/.*tag: *//' | grep -vE '^5\.3\.0$')
+  done < <(awk '
+      /^[[:space:]]*(repository|image):/ { prev="image"; next }
+      /^[[:space:]]*ref:/                { prev="ref";   next }
+      /^[[:space:]]*tag:/ {
+        if (prev == "image") { sub(/^[[:space:]]*tag:[[:space:]]*/, ""); print }
+        next
+      }
+      /^[[:space:]]*$/ { next }
+      { prev="other" }
+    ' "$hr")
 done
 if [ -n "$unpinned" ]; then
   n=$(lines "$unpinned" | wc -l | tr -d ' ')

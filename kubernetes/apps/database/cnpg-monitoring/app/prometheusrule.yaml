@@ -1,24 +1,19 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
-# Backup alerting. The Alertmanager root route already sends everything to ntfy,
-# so no labels are needed -- and Prometheus selects every PrometheusRule in the
-# cluster (ruleSelectorNilUsesHelmValues: false).
+# Backup alerting. Alertmanager's root route sends everything to ntfy, so no
+# labels are needed, and Prometheus selects every PrometheusRule in the cluster
+# (ruleSelectorNilUsesHelmValues: false).
 #
-# WHY THERE IS NO "no recent backup" RULE HERE:
+# The backup metrics come from the barman plugin, not the operator. The plugin
+# serves them over CNPG-I's gRPC metrics interface and the operator re-exposes
+# them on the instance-manager endpoint that the per-cluster PodMonitor already
+# scrapes. The names are the plugin name sanitised plus the metric:
+# barman_cloud_cloudnative_pg_io_<metric>.
 #
-# cnpg_collector_last_available_backup_timestamp still exists on the endpoint but
-# reads 0 on a cluster with a completed base backup -- the operator no longer
-# populates it now that a CNPG-I plugin owns backups, and the plugin's own metrics
-# are not exposed by the release manifest (its Deployment has no metrics port, and
-# barman-plugin-metrics-reader has no binding). A rule guarded by `> 0` would never
-# fire, and an unguarded one would fire forever.
-#
-# The real state is in ObjectStore.status.serverRecoveryWindow
-# (lastSuccessfulBackupTime / lastFailedBackupTime / firstRecoverabilityPoint).
-# That rule gets written once the plugin's metrics are exposed and scraped.
-#
-# The failure metric below IS still populated -- it moved at 10:52 for a real
-# failed attempt -- so "a backup failed recently" is expressible correctly.
+# Do NOT use cnpg_collector_last_available_backup_timestamp /
+# cnpg_collector_last_failed_backup_timestamp: they are deprecated, and the
+# available one reads 0 even with a completed base backup in the object store,
+# which makes any rule built on it either dead or permanently firing.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -27,24 +22,47 @@ spec:
   groups:
     - name: cnpg.backups
       rules:
-        # "A failure in the last 24h", NOT "the last failure is newer than the last
-        # success". The latter is always true here because the success metric is 0,
-        # so it would fire forever. A cluster that has never failed reports 0, and
-        # time() - 0 is huge, so this stays quiet until something actually breaks.
+        # The failure that actually bites. A ScheduledBackup that quietly stops
+        # running emits no failure event, and continuing WAL archiving makes it
+        # look healthy from every other angle.
+        #
+        # `== 0` is deliberate, not defensive: the plugin returns 0 both when the
+        # ObjectStore has no entry for this server name and when no backup has
+        # completed, so 0 means "never backed up" rather than "unknown". That is
+        # exactly the state three clusters sat in -- Ready, ContinuousArchiving
+        # true, and nothing to restore from.
+        - alert: CNPGNoRecentBackup
+          expr: |
+            (
+              time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp > 86400
+              or
+              barman_cloud_cloudnative_pg_io_last_available_backup_timestamp == 0
+            )
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              No successful CNPG base backup in 24h ({{ $labels.namespace }}/{{ $labels.pod }})
+            description: >-
+              WAL archiving alone is not restorable. A base backup anchors the WAL
+              stream, so without one point-in-time recovery cannot start.
+
+        # Recency, not "failure is newer than success" -- the latter would fire
+        # forever on a cluster whose failure timestamp is set and success is not.
         - alert: CNPGBackupFailed
           expr: |
-            time() - cnpg_collector_last_failed_backup_timestamp < 86400
-              and cnpg_collector_last_failed_backup_timestamp > 0
+            time() - barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp < 86400
+              and barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp > 0
           for: 5m
           labels:
             severity: warning
           annotations:
             summary: >-
-              CNPG backup failed in the last 24h ({{ $labels.namespace }}/{{ $labels.cluster }})
+              CNPG backup failed in the last 24h ({{ $labels.namespace }}/{{ $labels.pod }})
 
         # A healthy cluster keeps this at or near zero: WAL segments waiting to be
-        # archived. Sustained growth means the point-in-time recovery window is
-        # silently shrinking. Verified against a live endpoint.
+        # archived. Sustained growth means the recovery window is shrinking.
         - alert: CNPGWalArchivingStalled
           expr: |
             cnpg_collector_pg_wal_archive_status{value="ready"} > 5
@@ -53,7 +71,7 @@ spec:
             severity: critical
           annotations:
             summary: >-
-              CNPG WAL archiving stalled ({{ $labels.namespace }}/{{ $labels.cluster }})
+              CNPG WAL archiving stalled ({{ $labels.namespace }}/{{ $labels.pod }})
             description: >-
               WAL segments are accumulating unarchived, so the point-in-time
               recovery window is shrinking.
