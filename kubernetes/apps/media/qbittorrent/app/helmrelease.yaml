@@ -35,7 +35,7 @@ spec:
                 if [ "$(cat "$D/.version" 2>/dev/null || true)" = "$V" ]; then
                   echo "vuetorrent $V already present"; exit 0
                 fi
-                apk add --no-cache curl unzip >/dev/null
+                apk add --no-cache curl unzip ca-certificates >/dev/null
                 mkdir -p "$D"
                 curl -fsSL "https://github.com/VueTorrent/VueTorrent/releases/download/v$V/vuetorrent.zip" -o /tmp/vt.zip
                 unzip -oq /tmp/vt.zip -d "$D"
