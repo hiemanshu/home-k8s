@@ -1,0 +1,14 @@
+---
+# name for the internal gateway, resolvable from the LAN (adguard-dns picks
+# this up via its crd source). Lets configs reference `internal.<domain>`
+# instead of the raw LoadBalancer IP.
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: gateway-names
+spec:
+  endpoints:
+    - dnsName: internal.${SECRET_DOMAIN}
+      recordType: A
+      targets:
+        - 192.168.69.3

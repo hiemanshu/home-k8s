@@ -23,6 +23,9 @@ spec:
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
       - --gateway-name=envoy-external
+      # `internal.<domain>` is a LAN-only name for the internal gateway; never
+      # publish it on Cloudflare (adguard-dns owns it)
+      - --exclude-domains=internal.${SECRET_DOMAIN}
     triggerLoopOnEvent: true
     policy: sync
     sources: ["crd", "gateway-httproute"]
