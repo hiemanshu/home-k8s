@@ -8,6 +8,9 @@
 # HonorWaitForFirstConsumer gate above is what makes a WaitForFirstConsumer scratch
 # class safe -- without it CDI creates the scratch PVC before the importer pod
 # exists, and an unbound WFFC volume would stall the import.
+#
+# workload.nodeSelector below pins CDI's worker pods to gandalf, the same node VMs
+# run on, so an import never attaches its volume across the cluster.
 apiVersion: cdi.kubevirt.io/v1beta1
 kind: CDI
 metadata:
@@ -22,5 +25,13 @@ spec:
     nodeSelector:
       kubernetes.io/os: linux
   workload:
+    # CDI's worker pods: importer, cloner, uploader.
+    #
+    # Belt and braces rather than the thing that decides disk placement. With
+    # HonorWaitForFirstConsumer (enabled above) CDI does NOT schedule a worker until
+    # the PVC is bound -- KubeVirt binds it first, using a dummy pod that mirrors the
+    # VM's own scheduling constraints. So the VM's nodeSelector is what chooses the
+    # node a disk is created on. This just keeps the import traffic on that same node
+    # instead of attaching the volume across the cluster.
     nodeSelector:
-      kubernetes.io/os: linux
+      kubernetes.io/hostname: gandalf
