@@ -63,7 +63,6 @@ spec:
           Monitoring:
           Dev:
           Identity:
-          Photos:
           Infrastructure:
       widgets:
         - kubernetes:
@@ -154,6 +153,15 @@ spec:
                   type: bazarr
                   url: http://bazarr.media.svc.cluster.local:6767
                   key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+            - Immich:
+                icon: immich.png
+                href: https://photos.${SECRET_DOMAIN}
+                description: Photo library
+                widget:
+                  type: immich
+                  version: 2
+                  url: http://immich-server.media.svc.cluster.local:2283
+                  key: "{{HOMEPAGE_VAR_IMMICH_API_KEY}}"
         - Tools:
             - Zipline:
                 icon: zipline.png
@@ -208,16 +216,6 @@ spec:
                 icon: lldap.png
                 href: https://users.${SECRET_DOMAIN}
                 description: Users & groups
-        - Photos:
-            - Immich:
-                icon: immich.png
-                href: https://photos.${SECRET_DOMAIN}
-                description: Photo library
-                widget:
-                  type: immich
-                  version: 2
-                  url: http://immich-server.media.svc.cluster.local:2283
-                  key: "{{HOMEPAGE_VAR_IMMICH_API_KEY}}"
         - Infrastructure:
             - Longhorn:
                 icon: longhorn.png
