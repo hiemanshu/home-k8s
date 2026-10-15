@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# The vendored manifest assumes this namespace exists (it references it but does
+# not create it), and its RoleBinding subjects name it explicitly -- so the
+# namespace is NOT overridden here. Overriding it would move the RoleBindings
+# without rewriting their subjects and silently break the bindings.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./namespace.yaml
+  - ./manifest.yaml

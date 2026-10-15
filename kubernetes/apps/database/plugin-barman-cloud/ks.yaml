@@ -1,0 +1,29 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# The Barman Cloud plugin (CNPG-I) that gives CNPG object-store backups with WAL
+# archiving, i.e. point-in-time recovery. Installed from the project's own
+# release manifest, vendored and pinned -- they publish no Helm chart, only that
+# bundled manifest, so there is nothing to chartRef.
+#
+# wait: true because the CNPG Clusters that reference this plugin (via
+# spec.plugins) dependOn this Kustomization -- there is no point configuring a
+# plugin whose Deployment and CRD are not ready yet.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app plugin-barman-cloud
+  namespace: &namespace database
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  path: ./kubernetes/apps/database/plugin-barman-cloud/app
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 10m
+  wait: true
