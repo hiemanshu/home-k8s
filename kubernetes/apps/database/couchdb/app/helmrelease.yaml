@@ -24,7 +24,7 @@ spec:
     # couchdb requires a fixed cluster uuid for single-node installs
     couchdbConfig:
       couchdb:
-        uuid: 3d5512b9-aadd-4d4a-9ce2-d97fbb62129b
+        uuid: 14b2bf86-d3fd-4e25-a24b-789173dc7a1f
     persistentVolume:
       enabled: true
       size: 10Gi
