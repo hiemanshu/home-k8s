@@ -163,6 +163,12 @@ spec:
                 icon: gatus.png
                 href: https://status.${SECRET_DOMAIN}
                 description: Service status
+                widget:
+                  type: gatus
+                  # the service, not the route: Gatus's API is unauthenticated
+                  # inside the cluster, while the card links to the Authelia-gated
+                  # UI. No NetworkPolicy on Gatus yet, so this reaches it.
+                  url: http://gatus.observability.svc.cluster.local:8080
         - Identity:
             - Authelia:
                 icon: authelia.png

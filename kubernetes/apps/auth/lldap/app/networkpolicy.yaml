@@ -23,3 +23,13 @@ spec:
               kubernetes.io/metadata.name: network
       ports:
         - port: 17170
+    # Gatus in observability checks the LDAP port directly, the same way the pod's
+    # own probe does. Same treatment the postgres and dragonfly policies already
+    # give observability for their metrics ports -- without it Cilium drops the
+    # packets and the check hangs until its timeout.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 3890
