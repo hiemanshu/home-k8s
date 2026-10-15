@@ -160,13 +160,21 @@ for d in $(app_dirs); do
   n="$(app_name "$d")"
   is_exempt "$n" "$VOLSYNC_EXEMPT" && continue
   is_exempt "$n" "$BACKUP_NOT_NEEDED" && continue
-  hr="$d/app/helmrelease.yaml"; [ -f "$hr" ] || continue
+  hr="$d/app/helmrelease.yaml"
   stateful=0
-  grep -qE 'existingClaim: ' "$hr" && stateful=1
+  [ -f "$hr" ] && grep -qE 'existingClaim: ' "$hr" && stateful=1
   [ -f "$d/app/pvc.yaml" ] && stateful=1
+  # A DataVolume creates its own PVC, so it is invisible to the two checks above.
+  # No early `continue` for a missing helmrelease either: chart-less app dirs like
+  # virtualization/vm are exactly where a DataVolume lives.
+  [ -f "$d/app/datavolume.yaml" ] && stateful=1
   [ "$stateful" = 0 ] && continue
-  grep -q 'components/volsync' "$d/ks.yaml" || \
-    find_ "$(rel "$d"): has a PVC but no components/volsync in ks.yaml"
+  # Two legitimate shapes: the shared component, or a bespoke ReplicationSource
+  # where the component's hourly cadence does not suit the volume (a VM disk).
+  if ! grep -q 'components/volsync' "$d/ks.yaml" 2>/dev/null \
+     && [ ! -f "$d/app/replicationsource.yaml" ]; then
+    find_ "$(rel "$d"): has a PVC but no backup (no components/volsync, no app/replicationsource.yaml)"
+  fi
 done
 
 head_ "8. every CNPG Cluster has a backup configured"
