@@ -14,7 +14,7 @@ spec:
       rootless: true
       registry: code.forgejo.org
       repository: forgejo/forgejo
-      tag: 16.0.6-rootless
+      tag: 17.0.0-rootless
       # this chart composes registry/repository:tag and takes the digest in its
       # own field -- appending @sha256: to the tag yields Init:InvalidImageName
       digest: sha256:51b47921660e1ec7127f094208fe06901ba57df4fe6d59fcccc3a2419514a77f
