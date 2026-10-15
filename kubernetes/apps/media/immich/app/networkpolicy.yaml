@@ -1,0 +1,25 @@
+---
+# Immich's bundled queue. It is a datastore, so it gets the same treatment as the
+# Postgres clusters and Dragonfly: same namespace only.
+#
+# Both labels are used because app.kubernetes.io/name alone would match any other
+# valkey that ever appears in the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: immich-valkey
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: valkey
+      app.kubernetes.io/instance: immich
+  policyTypes:
+    - Ingress
+  ingress:
+    # Immich's server and workers live in the same namespace. No gateway route
+    # (it is a queue, not an HTTP service) and no metrics consumer beyond the
+    # exporter that shares its pod, which same-namespace already covers.
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 6379
