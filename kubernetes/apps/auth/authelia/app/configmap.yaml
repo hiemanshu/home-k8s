@@ -109,6 +109,10 @@ data:
         # Dashboard: any authenticated user.
         - domain: home.${SECRET_DOMAIN}
           policy: one_factor
+        # Status page: internal route, so forward-auth genuinely applies. Any
+        # authenticated user -- it is a reachability page, not an admin surface.
+        - domain: status.${SECRET_DOMAIN}
+          policy: one_factor
         # Admin-only UIs (servarr media UIs + cluster/admin surfaces).
         - domain:
             - grafana.${SECRET_DOMAIN}

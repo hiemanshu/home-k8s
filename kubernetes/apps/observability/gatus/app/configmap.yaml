@@ -1,0 +1,115 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus-config
+data:
+  # Checks hit the real routes over HTTPS, so they exercise DNS, the gateway, TLS
+  # and the app -- not just "the pod is listening". Conditions are `[STATUS] < 400`
+  # because several apps legitimately answer 302 (Authelia forward-auth) or 302/200
+  # (their own OIDC), while 404 and 5xx both mean something is actually broken.
+  #
+  # Paths are the same health endpoints the pods' own probes use.
+  #
+  # `${SECRET_DOMAIN}` is substituted by Flux, so the domain stays in one place.
+  config.yaml: |
+    storage:
+      type: sqlite
+      path: /data/gatus.db
+      maximum-number-of-results: 200
+      maximum-number-of-events: 100
+
+    ui:
+      title: Homelab
+      description: Service reachability
+      header: Homelab
+      default-sort-by: group
+      default-sort-order: asc
+
+    endpoints:
+      - name: Authelia
+        group: Identity
+        url: https://auth.${SECRET_DOMAIN}/api/health
+        conditions: ["[STATUS] < 400"]
+      - name: lldap
+        group: Identity
+        url: tcp://lldap.auth.svc.cluster.local:3890
+        conditions: ["[CONNECTED] == true"]
+
+      - name: Forgejo
+        group: Dev
+        url: https://git.${SECRET_DOMAIN}/api/healthz
+        conditions: ["[STATUS] < 400"]
+      - name: gitea-mirror
+        group: Dev
+        url: https://mirror.${SECRET_DOMAIN}/api/health
+        conditions: ["[STATUS] < 400"]
+
+      - name: Immich
+        group: Photos
+        url: https://photos.${SECRET_DOMAIN}/api/server/ping
+        conditions: ["[STATUS] < 400"]
+
+      - name: OpenCloud
+        group: Files
+        url: https://files.${SECRET_DOMAIN}/
+        conditions: ["[STATUS] < 400"]
+      - name: Zipline
+        group: Files
+        url: https://share.${SECRET_DOMAIN}/api/healthcheck
+        conditions: ["[STATUS] < 400"]
+      - name: CouchDB
+        group: Files
+        url: tcp://obsidian-couchdb.database.svc.cluster.local:5984
+        conditions: ["[CONNECTED] == true"]
+
+      - name: Plex
+        group: Media
+        url: https://plex.${SECRET_DOMAIN}/identity
+        conditions: ["[STATUS] < 400"]
+      - name: Radarr
+        group: Media
+        url: https://radarr.${SECRET_DOMAIN}/ping
+        conditions: ["[STATUS] < 400"]
+      - name: Sonarr
+        group: Media
+        url: https://sonarr.${SECRET_DOMAIN}/ping
+        conditions: ["[STATUS] < 400"]
+      - name: Prowlarr
+        group: Media
+        url: https://prowlarr.${SECRET_DOMAIN}/ping
+        conditions: ["[STATUS] < 400"]
+      - name: SABnzbd
+        group: Media
+        url: https://sabnzbd.${SECRET_DOMAIN}/api?mode=version
+        conditions: ["[STATUS] < 400"]
+      - name: Bazarr
+        group: Media
+        url: https://bazarr.${SECRET_DOMAIN}/api/system/ping
+        conditions: ["[STATUS] < 400"]
+      - name: qBittorrent
+        group: Media
+        url: https://downloads.${SECRET_DOMAIN}/
+        conditions: ["[STATUS] < 400"]
+
+      - name: Grafana
+        group: Monitoring
+        url: https://grafana.${SECRET_DOMAIN}/api/health
+        conditions: ["[STATUS] < 400"]
+      - name: ntfy
+        group: Monitoring
+        url: https://notify.${SECRET_DOMAIN}/v1/health
+        conditions: ["[STATUS] < 400"]
+      - name: Homepage
+        group: Monitoring
+        url: https://home.${SECRET_DOMAIN}/
+        conditions: ["[STATUS] < 400"]
+
+      - name: Longhorn
+        group: Infrastructure
+        url: https://longhorn.${SECRET_DOMAIN}/
+        conditions: ["[STATUS] < 400"]
+      - name: AdGuard
+        group: Infrastructure
+        url: http://adguard-dns-internal.network.svc.cluster.local:3000/
+        conditions: ["[STATUS] < 400"]

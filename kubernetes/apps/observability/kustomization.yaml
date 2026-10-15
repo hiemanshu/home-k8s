@@ -13,4 +13,5 @@ resources:
   - ./loki/ks.yaml
   - ./alloy/ks.yaml
   - ./ntfy/ks.yaml
+  - ./gatus/ks.yaml
   - ./alertmanager-ntfy/ks.yaml

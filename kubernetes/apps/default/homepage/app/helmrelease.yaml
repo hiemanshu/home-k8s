@@ -159,6 +159,10 @@ spec:
                 icon: grafana.png
                 href: https://grafana.${SECRET_DOMAIN}
                 description: Metrics & logs
+            - Gatus:
+                icon: gatus.png
+                href: https://status.${SECRET_DOMAIN}
+                description: Service status
         - Identity:
             - Authelia:
                 icon: authelia.png
