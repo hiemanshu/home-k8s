@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/barmancloud.cnpg.io/objectstore_v1.json
+# Where this namespace's Postgres backups go. The plugin (CNPG-I) reads this via
+# the Cluster's spec.plugins.
+#
+# endpointURL and destinationPath are plain strings in the CRD -- only
+# s3Credentials accepts a SecretKeySelector -- so they come from the shared
+# ${S3_ENDPOINT}/${S3_BUCKET} substitution rather than being hardcoded, which
+# keeps 1Password the single source of truth for the endpoint.
+#
+# The credentials come from the s3-secrets component, which is added per
+# namespace because postBuild.substituteFrom resolves in the Kustomization's own
+# namespace.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: postgres-s3
+spec:
+  # base backups and WAL together, so this is the point-in-time recovery window
+  retentionPolicy: 30d
+  configuration:
+    endpointURL: ${S3_ENDPOINT}
+    destinationPath: s3://${S3_BUCKET}/media
+    s3Credentials:
+      accessKeyId:
+        name: s3-secrets
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: s3-secrets
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip

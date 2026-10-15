@@ -12,6 +12,9 @@ spec:
   dependsOn:
     - name: postgres-secrets
       namespace: media
+    # the plugin must be registered before a Cluster can reference it
+    - name: plugin-barman-cloud
+      namespace: database
   interval: 1h
   path: ./kubernetes/apps/media/postgres/app
   prune: true

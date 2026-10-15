@@ -37,3 +37,10 @@ spec:
         login: true
         passwordSecret:
           name: immich-db-password
+  # The barman-cloud plugin provides object-store backups with WAL archiving,
+  # i.e. point-in-time recovery. Enabling a plugin rolls the Postgres instances,
+  # because the plugin also runs as a sidecar inside the instance pods.
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      parameters:
+        barmanObjectName: postgres-s3

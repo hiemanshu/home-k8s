@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/postgresql.cnpg.io/scheduledbackup_v1.json
+# Six field cron (seconds included) -- NOT the Kubernetes CronJob format.
+#
+# No `immediate: true` here on purpose: it fires at object creation, which races
+# the plugin rollout that enabling spec.plugins triggers, and the first attempt
+# then fails for want of a plugin instance. The default cluster's first backup
+# failed exactly that way.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgres-daily
+spec:
+  schedule: "0 30 2 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: postgres
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
