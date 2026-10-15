@@ -117,6 +117,18 @@ data:
         jwks:
           - key_id: default
             key: {{ secret "/secrets/oidc_jwks_key" | mindent 10 "|" | msquote }}
+        # OpenCloud Web is the only browser SPA here: it exchanges the auth code
+        # from files.<domain> against the token endpoint on auth.<domain>, which
+        # is cross-origin and therefore needs CORS. Every other client does the
+        # exchange server-side and needs nothing here.
+        cors:
+          endpoints:
+            - authorization
+            - token
+            - userinfo
+            - revocation
+          allowed_origins:
+            - https://files.${SECRET_DOMAIN}
         claims_policies:
           default:
             id_token:
