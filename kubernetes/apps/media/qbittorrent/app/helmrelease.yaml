@@ -37,7 +37,7 @@ spec:
                 fi
                 apk add --no-cache curl unzip >/dev/null
                 mkdir -p "$D"
-                curl -fsSL "https://github.com/VueTorrent/VueTorrent/releases/download/v${V}/vuetorrent.zip" -o /tmp/vt.zip
+                curl -fsSL "https://github.com/VueTorrent/VueTorrent/releases/download/v$V/vuetorrent.zip" -o /tmp/vt.zip
                 unzip -oq /tmp/vt.zip -d "$D"
                 echo "$V" > "$D/.version"
                 chown -R 568:568 "$D"
