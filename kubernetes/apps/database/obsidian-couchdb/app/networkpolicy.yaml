@@ -1,0 +1,34 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: obsidian-couchdb
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: obsidian-couchdb
+  policyTypes:
+    - Ingress
+  ingress:
+    # LiveSync clients reach it through the public gateway -- notes.<domain> is on
+    # envoy-external -- so the gateway is the only ingress from outside.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: network
+      ports:
+        - port: 5984
+    # Gatus checks the TCP port directly, the same way the pod's own probe does.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 5984
+    # same namespace only: the CNPG operator lives here and nothing else needs it.
+    # This is the point of the policy -- CouchDB holds the Obsidian vault, and
+    # until now any pod in the cluster could reach it.
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 5984
