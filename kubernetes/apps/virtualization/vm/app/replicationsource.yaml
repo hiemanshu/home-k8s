@@ -1,0 +1,38 @@
+---
+# Bespoke rather than components/volsync, because the component is tuned for a few
+# MB of app config: it runs hourly and retains 24 hourly snapshots. A VM disk is
+# tens of GiB that restic has to read in full on every run, so daily is the right
+# cadence, and hourly retention would just accumulate copies of a large image.
+#
+# copyMethod: Snapshot is what makes this safe while the VM is running: volsync
+# snapshots the volume and backs up from a copy, so it never needs to mount the
+# disk virt-launcher is holding. It is a crash-consistent snapshot, not a quiesced
+# one -- fine for test VMs, and freeze/thaw would be needed if that changed.
+#
+# The temp copy PVC uses the ordinary longhorn class, not longhorn-vm: it is
+# transient, and a strict-locality class would pin it to the mover pod's node,
+# which need not be the node holding the source volume.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: test1
+spec:
+  sourcePVC: test1
+  trigger:
+    schedule: "0 3 * * *"
+  restic:
+    repository: test1-volsync-minio-secret
+    copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
+    storageClassName: longhorn
+    cacheStorageClassName: longhorn-cache
+    cacheCapacity: 5Gi
+    accessModes: ["ReadWriteOnce"]
+    cacheAccessModes: ["ReadWriteOnce"]
+    moverSecurityContext:
+      fsGroup: 568
+      runAsGroup: 568
+      runAsUser: 568
+    pruneIntervalDays: 7
+    retain:
+      daily: 7

@@ -13,3 +13,4 @@ resources:
   - ./kubevirt/ks.yaml
   - ./kubevirt-manager/ks.yaml
   - ./vm-namespace-policy/ks.yaml
+  - ./vm/ks.yaml

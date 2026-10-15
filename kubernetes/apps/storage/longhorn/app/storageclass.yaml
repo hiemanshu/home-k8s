@@ -25,6 +25,11 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: longhorn-vm
+  annotations:
+    # CDI prefers this over the cluster default when a DataVolume omits
+    # storageClassName, so new VM disks land on the fast single-replica class
+    # without every DataVolume having to say so.
+    storageclass.kubevirt.io/is-default-virt-class: "true"
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
