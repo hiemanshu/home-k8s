@@ -145,6 +145,14 @@ spec:
                   # no webui auth: the image whitelists 10.0.0.0/8, so the
                   # widget reaches the API without credentials (authelia gates
                   # the ui itself)
+            - Bazarr:
+                icon: bazarr.png
+                href: https://bazarr.${SECRET_DOMAIN}
+                description: Subtitles
+                widget:
+                  type: bazarr
+                  url: http://bazarr.media.svc.cluster.local:6767
+                  key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
         - Monitoring:
             - Grafana:
                 icon: grafana.png
@@ -177,6 +185,10 @@ spec:
                 icon: zipline.png
                 href: https://share.${SECRET_DOMAIN}
                 description: File uploads & share links
+            - OpenCloud:
+                icon: opencloud.png
+                href: https://files.${SECRET_DOMAIN}
+                description: Files & shares
         - Photos:
             - Immich:
                 icon: immich.png
