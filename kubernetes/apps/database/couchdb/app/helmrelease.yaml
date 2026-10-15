@@ -20,7 +20,7 @@ spec:
     allowAdminParty: false
     # credentials come from the ExternalSecret (couchdb-couchdb)
     createAdminSecret: false
-    adminUsername: admin
+    adminUsername: couchadmin
     # couchdb requires a fixed cluster uuid for single-node installs
     couchdbConfig:
       couchdb:
