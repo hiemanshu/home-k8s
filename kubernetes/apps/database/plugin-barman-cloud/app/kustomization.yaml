@@ -1,11 +1,26 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
-# The vendored manifest assumes this namespace exists (it references it but does
-# not create it), and its RoleBinding subjects name it explicitly -- so the
-# namespace is NOT overridden here. Overriding it would move the RoleBindings
-# without rewriting their subjects and silently break the bindings.
+# The Barman Cloud plugin (CNPG-I) -- object-store backups with WAL archiving,
+# i.e. point-in-time recovery for the CNPG clusters.
+#
+# Vendored from the project's release manifest, pinned to v0.15.1. They publish
+# no Helm chart, only that bundled manifest, so there is nothing to chartRef.
+#
+# ONE local transformation: the manifest targets `cnpg-system`, but CNPG-I
+# standalone plugins must run in the SAME namespace as the operator to be
+# discovered (docs/src/cnpg_i.md), and ours is in `database`. So the namespace
+# string was substituted globally -- which also fixes the RoleBinding subjects
+# and the Certificate dnsNames, neither of which kustomize's namespace
+# transformer would have rewritten. To upgrade:
+#
+#   curl -fsSL -o manifest.yaml \
+#     https://github.com/cloudnative-pg/plugin-barman-cloud/releases/download/<ver>/manifest.yaml
+#   sed -i '' 's/cnpg-system/database/g' manifest.yaml
+#
+# The discovery contract lives on its Service: label
+# cnpg.io/pluginName: barman-cloud.cloudnative-pg.io, annotation
+# cnpg.io/pluginPort: "9090", and mTLS via the two cert secrets.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./namespace.yaml
   - ./manifest.yaml
