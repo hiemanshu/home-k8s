@@ -4,25 +4,21 @@
 # so no labels are needed -- and Prometheus selects every PrometheusRule in the
 # cluster (ruleSelectorNilUsesHelmValues: false).
 #
-# WHY THERE IS NO "backup failed" OR "no recent backup" RULE HERE:
+# WHY THERE IS NO "no recent backup" RULE HERE:
 #
-# cnpg_collector_last_available_backup_timestamp and
-# cnpg_collector_last_failed_backup_timestamp still exist on the metrics endpoint
-# but are marked Deprecated, and the operator no longer populates them once a
-# CNPG-I plugin owns backups. Measured on a cluster with a completed base backup
-# in the object store:
+# cnpg_collector_last_available_backup_timestamp still exists on the endpoint but
+# reads 0 on a cluster with a completed base backup -- the operator no longer
+# populates it now that a CNPG-I plugin owns backups, and the plugin's own metrics
+# are not exposed by the release manifest (its Deployment has no metrics port, and
+# barman-plugin-metrics-reader has no binding). A rule guarded by `> 0` would never
+# fire, and an unguarded one would fire forever.
 #
-#   cnpg_collector_last_available_backup_timestamp 0            <- zero
-#   cnpg_collector_last_failed_backup_timestamp    <stale value>
+# The real state is in ObjectStore.status.serverRecoveryWindow
+# (lastSuccessfulBackupTime / lastFailedBackupTime / firstRecoverabilityPoint).
+# That rule gets written once the plugin's metrics are exposed and scraped.
 #
-# So a "no recent backup" rule guarded by `> 0` can never fire, and an unguarded
-# "last failure is newer than last success" rule fires forever. Both are worse
-# than having no rule, because they look like coverage.
-#
-# The real state lives in the plugin: ObjectStore.status.serverRecoveryWindow
-# carries lastSuccessfulBackupTime / lastFailedBackupTime / firstRecoverabilityPoint.
-# Those rules get written once the plugin's metric names are confirmed by
-# scraping its endpoint -- guessing them is what produced the above.
+# The failure metric below IS still populated -- it moved at 10:52 for a real
+# failed attempt -- so "a backup failed recently" is expressible correctly.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -31,6 +27,21 @@ spec:
   groups:
     - name: cnpg.backups
       rules:
+        # "A failure in the last 24h", NOT "the last failure is newer than the last
+        # success". The latter is always true here because the success metric is 0,
+        # so it would fire forever. A cluster that has never failed reports 0, and
+        # time() - 0 is huge, so this stays quiet until something actually breaks.
+        - alert: CNPGBackupFailed
+          expr: |
+            time() - cnpg_collector_last_failed_backup_timestamp < 86400
+              and cnpg_collector_last_failed_backup_timestamp > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              CNPG backup failed in the last 24h ({{ $labels.namespace }}/{{ $labels.cluster }})
+
         # A healthy cluster keeps this at or near zero: WAL segments waiting to be
         # archived. Sustained growth means the point-in-time recovery window is
         # silently shrinking. Verified against a live endpoint.
