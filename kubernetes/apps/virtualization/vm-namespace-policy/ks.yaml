@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# Temporary guardrail: VMs may only be created in `virtualization`.
+#
+# No targetNamespace: everything in this app is cluster-scoped, and Flux's
+# targetNamespace is for namespaced resources.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app vm-namespace-policy
+  namespace: &namespace virtualization
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: kubevirt
+      namespace: virtualization
+  interval: 1h
+  path: ./kubernetes/apps/virtualization/vm-namespace-policy/app
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 5m
+  wait: false

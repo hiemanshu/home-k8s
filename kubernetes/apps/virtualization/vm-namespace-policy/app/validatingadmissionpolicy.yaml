@@ -1,0 +1,40 @@
+---
+# Temporary guardrail: KubeVirt VMs may only be created in the `virtualization`
+# namespace.
+#
+# A ValidatingAdmissionPolicy rather than Kyverno or Gatekeeper: it is built into
+# Kubernetes (GA since 1.30, this cluster is 1.36), so one rule does not justify
+# adding a policy engine and another thing to keep upgraded.
+#
+# Scoped to `virtualmachines` and `virtualmachineinstances`. The VMI half is not
+# redundant: a VMI can be created directly with no VirtualMachine behind it, and a
+# VirtualMachine's own VMI is created by its controller in the same namespace, so
+# blocking both costs nothing and closes the obvious hole.
+#
+# Other kubevirt.io CRs (pools, snapshots, clones, exports) are deliberately NOT
+# covered. Widen this if VMs start arriving through one of those.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: vm-namespace-restriction
+spec:
+  # Fail closed: if the rule cannot be evaluated, deny rather than silently allow.
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["kubevirt.io"]
+        apiVersions: ["*"]
+        operations: ["CREATE"]
+        resources: ["virtualmachines", "virtualmachineinstances"]
+  validations:
+    - expression: "request.namespace == 'virtualization'"
+      message: "KubeVirt VMs may only be created in the virtualization namespace (temporary guardrail)."
+---
+# A policy with no binding does nothing at all -- the binding is what enforces it.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: vm-namespace-restriction
+spec:
+  policyName: vm-namespace-restriction
+  validationActions: ["Deny"]
