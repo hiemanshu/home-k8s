@@ -53,6 +53,14 @@ fixes here have needed a decision first.
 - `app/kustomization.yaml` lists every manifest in that directory. A manifest not
   listed is dead config that never deploys — easy to miss because the directory
   still looks populated.
+- **Every `kubernetes/apps/<ns>/kustomization.yaml` includes
+  `components: [../../components/sops]`.** Not optional, not stylistic: the
+  cluster-wide patch in `kubernetes/flux/cluster/ks.yaml` adds a **non-optional**
+  `substituteFrom: cluster-secrets` to every child Kustomization, and `substituteFrom`
+  resolves that Secret in the Kustomization's **own** namespace. Omit it and the
+  namespace's apps fail at post-build with `secrets "cluster-secrets" not found`,
+  cascading into everything that `dependsOn` them — this is what took out `kubevirt`,
+  `cdi` and `kubevirt-manager` in one go. The audit checks it.
 - app-template comes from `OCIRepository` (`oci://ghcr.io/bjw-s-labs/helm/app-template`)
   referenced via `chartRef`, tag matching the version used elsewhere (currently `5.3.0`).
 - **Images are pinned with a version *and* the manifest-list digest**
@@ -228,6 +236,12 @@ Learned the hard way; check these before assuming a fix "didn't work".
   no-op, so the manifest is applied with a literal `${VAR}` in it. That is exactly
   how a CNPG `ObjectStore` was once rejected by CRD validation with no error
   anywhere except the object simply not existing.
+  - **The failure mode to recognise:**
+    `post build failed for '<Kind>/<name>': substitute from 'Secret/cluster-secrets'
+    error: secrets "cluster-secrets" not found`. That is a missing `components/sops`
+    in *that namespace's* kustomization, never a problem with the app itself. Because
+    `dependsOn` chains, several Kustomizations report `dependency ... is not ready` at
+    the same time and only the first one is the real failure — read past the cascade.
 - **The Homepage dashboard is hand-maintained**, so it drifts as apps are added —
   a new app is invisible on the dashboard until someone adds a card. Check it
   after every new app.

@@ -101,7 +101,7 @@ else
   ok_ "all app images carry a digest"
 fi
 
-head_ "3. ks.yaml present and listed in its namespace kustomization"
+head_ "3. namespace kustomizations: every app listed, and components/sops present"
 for d in $(app_dirs); do
   n="$(app_name "$d")"; ns="$(ns_of "$d")"
   is_exempt "$n" "$DISABLED_APPS" && continue
@@ -110,6 +110,21 @@ for d in $(app_dirs); do
   if [ -d "$d/app" ] && [ ! -f "$d/app/kustomization.yaml" ]; then
     note_ "$ns/$n: app/ has no kustomization.yaml (kustomize builds it implicitly; every other app has one)"
   fi
+done
+# Missing components/sops is a BUILD FAILURE, not a style issue, which is why it lives
+# here rather than in the cleanup sweep. kubernetes/flux/cluster/ks.yaml patches a
+# NON-optional substituteFrom: cluster-secrets onto every child Kustomization, and
+# substituteFrom resolves that Secret in the Kustomization's OWN namespace. Without
+# the component the namespace's apps fail post-build with
+# 'secrets "cluster-secrets" not found', and every Kustomization depending on them
+# cascades off it. This is exactly how virtualization/kubevirt, cdi and
+# kubevirt-manager all failed at once.
+for k in "$APPS"/*/kustomization.yaml; do
+  ns="$(basename "$(dirname "$k")")"
+  # a namespace with no child Kustomizations has no substituteFrom to satisfy
+  grep -q '/ks.yaml' "$k" 2>/dev/null || continue
+  grep -q 'components/sops' "$k" || \
+    find_ "$APPS/$ns/kustomization.yaml: no components/sops -> cluster-secrets is never rendered into $ns, so every app there fails at post-build"
 done
 
 head_ "4. every manifest in app/ is listed in its kustomization.yaml"
