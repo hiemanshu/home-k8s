@@ -21,31 +21,6 @@ spec:
       qbittorrent:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          vuetorrent:
-            image:
-              repository: docker.io/alpine
-              tag: "3.22"
-            command: ["/bin/sh", "-c"]
-            args:
-              - |
-                set -eu
-                V=2.36.1
-                D=/config/qBittorrent/vuetorrent
-                if [ "$(cat "$D/.version" 2>/dev/null || true)" = "$V" ]; then
-                  echo "vuetorrent $V already present"; exit 0
-                fi
-                apk add --no-cache curl unzip ca-certificates >/dev/null
-                mkdir -p "$D"
-                curl -fsSL "https://github.com/VueTorrent/VueTorrent/releases/download/v$V/vuetorrent.zip" -o /tmp/vt.zip
-                unzip -oq /tmp/vt.zip -d "$D"
-                echo "$V" > "$D/.version"
-                chown -R 568:568 "$D"
-            securityContext:
-              # apk needs root; the files are chowned to 568 afterwards.
-              # container-level runAsNonRoot:false overrides the pod-level true.
-              runAsUser: 0
-              runAsNonRoot: false
         containers:
           app:
             image:
@@ -89,17 +64,6 @@ spec:
         ports:
           http:
             port: *port
-    route:
-      app:
-        hostnames: ["downloads.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: envoy-internal
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
     persistence:
       config:
         existingClaim: qbittorrent
