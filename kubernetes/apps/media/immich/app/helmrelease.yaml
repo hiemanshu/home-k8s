@@ -20,6 +20,8 @@ spec:
     # shared across all immich components
     controllers:
       main:
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           main:
             image:
