@@ -113,6 +113,11 @@ data:
         # authenticated user -- it is a reachability page, not an admin surface.
         - domain: status.${SECRET_DOMAIN}
           policy: one_factor
+        # VM management: creating and destroying machines, so admin-only.
+        - domain: virt.${SECRET_DOMAIN}
+          subject:
+            - 'group:admins'
+          policy: two_factor
         # Admin-only UIs (servarr media UIs + cluster/admin surfaces).
         - domain:
             - grafana.${SECRET_DOMAIN}

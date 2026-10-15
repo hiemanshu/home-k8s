@@ -1,0 +1,29 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kubevirt-manager
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: kubevirt-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    # the internal gateway fronts the UI
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: network
+      ports:
+        - port: 8080
+    # Prometheus scrapes the metrics endpoint the bundled nginx proxies
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 8080
+  # No egress rule needed: these policies are Ingress-only, so the manager can
+  # still reach the kube-apiserver. (The reference config needs a Cilium egress
+  # policy because it also defaults egress to deny.)

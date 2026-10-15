@@ -109,6 +109,10 @@ data:
         group: Infrastructure
         url: https://longhorn.${SECRET_DOMAIN}/
         conditions: ["[STATUS] < 400"]
+      - name: KubeVirt Manager
+        group: Infrastructure
+        url: https://virt.${SECRET_DOMAIN}/
+        conditions: ["[STATUS] < 400"]
       - name: AdGuard
         group: Infrastructure
         url: http://adguard-dns-internal.network.svc.cluster.local:3000/

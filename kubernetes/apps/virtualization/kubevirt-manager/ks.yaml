@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# kubevirt-manager: a purpose-built UI for the VMs -- better targeted than
+# Headlamp for this. In the virtualization namespace per the repo's convention
+# of no new app namespaces.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app kubevirt-manager
+  namespace: &namespace virtualization
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: kubevirt
+      namespace: virtualization
+  interval: 1h
+  path: ./kubernetes/apps/virtualization/kubevirt-manager/app
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false

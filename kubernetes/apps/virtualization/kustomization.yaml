@@ -7,3 +7,4 @@ resources:
   - ./namespace.yaml
   - ./cdi/ks.yaml
   - ./kubevirt/ks.yaml
+  - ./kubevirt-manager/ks.yaml
