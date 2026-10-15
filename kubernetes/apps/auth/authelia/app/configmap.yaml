@@ -120,6 +120,7 @@ data:
             - sonarr.${SECRET_DOMAIN}
             - prowlarr.${SECRET_DOMAIN}
             - sabnzbd.${SECRET_DOMAIN}
+            - bazarr.${SECRET_DOMAIN}
             - tautulli.${SECRET_DOMAIN}
             - downloads.${SECRET_DOMAIN}
           subject:
