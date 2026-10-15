@@ -10,7 +10,7 @@
 #
 # Redis is required in practice. Kutt's own clients (redis.js, queues.js) are gated
 # on REDIS_ENABLED, but its rate limiter builds a Redis store at startup regardless,
-# so with Redis off the app dies connecting to 127.0.0.1:6379. The `valkey` app in
+# so with Redis off the app dies connecting to 127.0.0.1:6379. The `dragonfly` app in
 # this namespace provides it.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -91,9 +91,9 @@ spec:
               # Required in practice. Kutt's own clients (redis.js, queues.js) are
               # gated on this flag, but its rate limiter builds a Redis store at
               # startup regardless -- with Redis off the app dies connecting to
-              # 127.0.0.1:6379. The `valkey` app in this namespace provides it.
+              # 127.0.0.1:6379. The `dragonfly` app in this namespace provides it.
               REDIS_ENABLED: "true"
-              REDIS_HOST: valkey.default.svc.cluster.local
+              REDIS_HOST: dragonfly.default.svc.cluster.local
               REDIS_PORT: "6379"
               # The whole point: only an authenticated user may create a link, while
               # the redirect itself stays public.

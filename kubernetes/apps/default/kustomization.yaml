@@ -11,9 +11,9 @@ resources:
   - ./namespace.yaml
   - ./postgres-secrets/ks.yaml
   - ./postgres/ks.yaml
+  - ./dragonfly/ks.yaml
   - ./echo/ks.yaml
   - ./homepage/ks.yaml
   - ./zipline/ks.yaml
   - ./kutt/ks.yaml
-  - ./valkey/ks.yaml
   - ./opencloud/ks.yaml

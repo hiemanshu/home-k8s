@@ -18,7 +18,7 @@ spec:
   dependsOn:
     - name: postgres
       namespace: default
-    - name: valkey
+    - name: dragonfly
       namespace: default
   interval: 1h
   path: ./kubernetes/apps/default/kutt/app
