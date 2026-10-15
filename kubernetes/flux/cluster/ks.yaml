@@ -31,6 +31,12 @@ spec:
             substituteFrom:
               - name: cluster-secrets
                 kind: Secret
+              # S3 connection details from 1Password. optional, so a first
+              # bootstrap (or a missing Secret) cannot fail every app in the
+              # cluster -- consumers retry and pick it up once it exists.
+              - name: s3-secrets
+                kind: Secret
+                optional: true
           patches:
             - patch: |-
                 apiVersion: helm.toolkit.fluxcd.io/v2
