@@ -21,6 +21,10 @@ spec:
     # credentials come from the ExternalSecret (couchdb-couchdb)
     createAdminSecret: false
     adminUsername: admin
+    # couchdb requires a fixed cluster uuid for single-node installs
+    couchdbConfig:
+      couchdb:
+        uuid: 3d5512b9-aadd-4d4a-9ce2-d97fbb62129b
     persistentVolume:
       enabled: true
       size: 10Gi
