@@ -33,7 +33,22 @@ spec:
               BAZARR__PORT: &port 6767
               TZ: America/Kolkata
             probes:
-              # Bazarr's own unauthenticated availability endpoint
+              # Bazarr initialises its database and scans before the web server
+              # answers /api/system/ping, which takes well over a minute on a
+              # 50m CPU request. Without a startup probe the liveness check killed
+              # it after ~30s, so it could never finish starting -- that was the
+              # restart loop. The startup probe holds liveness off until the app
+              # actually answers; liveness then only catches real hangs.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/system/ping
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 30
               liveness: &probes
                 enabled: true
                 custom: true
@@ -41,9 +56,8 @@ spec:
                   httpGet:
                     path: /api/system/ping
                     port: *port
-                  initialDelaySeconds: 0
-                  periodSeconds: 10
-                  timeoutSeconds: 1
+                  periodSeconds: 30
+                  timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
             securityContext:
