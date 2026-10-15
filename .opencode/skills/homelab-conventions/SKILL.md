@@ -231,6 +231,14 @@ Learned the hard way; check these before assuming a fix "didn't work".
 - **The Homepage dashboard is hand-maintained**, so it drifts as apps are added —
   a new app is invisible on the dashboard until someone adds a card. Check it
   after every new app.
+- **A `tag` digest is only correct for charts that put it there.** app-template
+  does (`repository` + `tag: 1.2.3@sha256:…`), and most of the *arr apps are pinned
+  that way. But a chart that composes the image from `registry` + `repository` +
+  `tag` — forgejo's does — needs the digest in its own `image.digest` field;
+  appending `@sha256:` to the tag produces a reference kubelet rejects with
+  `Init:InvalidImageName`, and the app simply won't start. Check the chart's
+  values before pinning, and never call a digest change "zero-risk" without
+  confirming which shape the chart expects.
 - **Restoring a CNPG cluster with the barman plugin needs the SOURCE server name
   in the plugin parameters, not the ObjectStore.** The plugin resolves it as
   `externalClusters[].plugin.parameters.serverName`, falling back to the *target*
