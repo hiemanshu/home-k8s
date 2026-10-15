@@ -154,7 +154,12 @@ done
 
 head_ "8. every CNPG Cluster has a backup configured"
 for c in $(grep -rl '^kind: Cluster$' "$APPS" --include='*.yaml' 2>/dev/null); do
-  if grep -qE 'barmanObjectStore|scheduledBackup|ObjectStore|^\s+backup:' "$c"; then
+  ns="$(printf '%s' "$c" | sed -E "s|$APPS/([^/]+)/.*|\1|")"
+  # three legitimate shapes: the deprecated in-tree barmanObjectStore, a
+  # volumeSnapshot backup, or a CNPG-I plugin (spec.plugins) -- the last of which
+  # puts the real config in an ObjectStore + ScheduledBackup in the same namespace
+  if grep -qE 'barmanObjectStore|ObjectStore|^\s+backup:|^\s+plugins:' "$c" \
+     || [ -n "$(find "$APPS/$ns" -name 'scheduledbackup*.yaml' 2>/dev/null)" ]; then
     ok_ "$(rel "$c"): backup configured"
   else
     find_ "$(rel "$c"): CNPG Cluster has NO backup -- data that git cannot rebuild"
