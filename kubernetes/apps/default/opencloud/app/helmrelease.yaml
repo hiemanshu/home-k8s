@@ -1,0 +1,148 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# OpenCloud (the OpenCloud fork of ownCloud Infinite Scale): files/shares.
+# Authentication is Authelia OIDC (a public client, no PKCE); the user
+# directory is OpenCloud's built-in IDM (LDAP), and users are auto-provisioned
+# there on first sign-in.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opencloud
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: opencloud
+  interval: 1h
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      opencloud:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/opencloudeu/opencloud-rolling
+              tag: 8.1.0
+            # `init` writes the generated config on first run and fails on every
+            # later run, so the error is swallowed before starting the server.
+            command:
+              - "/bin/sh"
+              - "-c"
+              - "opencloud init || true; opencloud server"
+            env:
+              OC_URL: https://files.${SECRET_DOMAIN}
+              OC_LOG_LEVEL: info
+              OC_LOG_COLOR: "false"
+              OC_LOG_PRETTY: "false"
+              HOME: /var/lib/opencloud
+              # TLS is terminated by the gateway
+              PROXY_TLS: "false"
+              OC_INSECURE: "false"
+              PROXY_ENABLE_BASIC_AUTH: "false"
+              FRONTEND_CHECK_FOR_UPDATES: "false"
+              # built-in IDM (LDAP) stays the user directory, and it must be
+              # writable so accounts can be auto-provisioned
+              OC_LDAP_SERVER_WRITE_ENABLED: "true"
+              IDM_CREATE_DEMO_USERS: "false"
+              IDM_ADMIN_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: opencloud-secret
+                    key: IDM_ADMIN_PASSWORD
+              # --- OIDC: authenticate against Authelia, not the built-in IDP ---
+              OC_OIDC_ISSUER: https://auth.${SECRET_DOMAIN}
+              OC_OIDC_CLIENT_ID: opencloud
+              OC_OIDC_CLIENT_SCOPES: openid profile email groups
+              WEB_OIDC_SCOPE: openid profile email groups
+              # Authelia issues opaque access tokens
+              PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD: "none"
+              PROXY_OIDC_SKIP_VERIFICATION: "false"
+              # serve Authelia's discovery document for native clients
+              PROXY_OIDC_REWRITE_WELLKNOWN: "true"
+              # resolve/provision users by their Authelia username
+              PROXY_USER_OIDC_CLAIM: preferred_username
+              PROXY_USER_CS3_CLAIM: username
+              PROXY_AUTOPROVISION_ACCOUNTS: "true"
+              PROXY_AUTOPROVISION_CLAIM_USERNAME: preferred_username
+              PROXY_ROLE_ASSIGNMENT_OIDC_CLAIM: groups
+              PROXY_ROLE_ASSIGNMENT_DRIVER: default
+              GRAPH_ASSIGN_DEFAULT_USER_ROLE: "true"
+              # --- Content-Security-Policy (must allow the Authelia origin) ---
+              IDP_DOMAIN: auth.${SECRET_DOMAIN}
+              PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud-config/csp.yaml
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 9200
+                  initialDelaySeconds: 20
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 10
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+    defaultPodOptions:
+      # the image runs as uid/gid 1000
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: opencloud
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames: ["files.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      data:
+        existingClaim: opencloud
+        globalMounts:
+          - path: /var/lib/opencloud
+            subPath: data
+      config:
+        existingClaim: opencloud
+        globalMounts:
+          - path: /etc/opencloud
+            subPath: config
+      csp:
+        type: configMap
+        name: opencloud-config
+        globalMounts:
+          - path: /etc/opencloud-config/csp.yaml
+            subPath: csp.yaml
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
