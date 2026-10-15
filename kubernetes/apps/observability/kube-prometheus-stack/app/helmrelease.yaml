@@ -24,6 +24,9 @@ spec:
     alertmanager:
       enabled: true
       alertmanagerSpec:
+        podMetadata:
+          annotations:
+            reloader.stakater.com/auto: "true"
         storage:
           volumeClaimTemplate:
             spec:
@@ -46,6 +49,8 @@ spec:
                 send_resolved: true
     grafana:
       enabled: true
+      podAnnotations:
+        reloader.stakater.com/auto: "true"
       persistence:
         enabled: true
         storageClassName: longhorn
@@ -85,6 +90,9 @@ spec:
       enabled: false
     prometheus:
       prometheusSpec:
+        podMetadata:
+          annotations:
+            reloader.stakater.com/auto: "true"
         retention: 30d
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
