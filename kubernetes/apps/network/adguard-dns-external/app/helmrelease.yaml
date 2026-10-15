@@ -39,10 +39,14 @@ spec:
     extraArgs:
       # the webhook provider API listens on the sidecar's localhost:8888
       - --webhook-provider-url=http://localhost:8888
-      # external routes only; adguard-dns-internal handles envoy-internal. AdGuard gets
-      # `<app> -> CNAME external.<domain>` which resolves locally to the
-      # envoy-external IP.
+      # external routes only; adguard-dns-internal handles envoy-internal.
       - --gateway-name=envoy-external
+      # override the gateway's target (external.<domain>, which cloudflare
+      # needs) with a LAN-only name for adguard. external-lan.<domain> isn't
+      # public, so clients follow the CNAME to the local rewrite -> the
+      # envoy-external IP, exactly like internal.<domain>.
+      - --default-targets=external-lan.${SECRET_DOMAIN}
+      - --force-default-targets
     # gateway-httproute only: do NOT mirror DNSEndpoints (the cloudflare tunnel
     # owns `external.<domain>`)
     sources: ["gateway-httproute"]
