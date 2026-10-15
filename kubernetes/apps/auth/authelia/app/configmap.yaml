@@ -104,6 +104,7 @@ data:
             - prowlarr.${SECRET_DOMAIN}
             - sabnzbd.${SECRET_DOMAIN}
             - tautulli.${SECRET_DOMAIN}
+            - downloads.${SECRET_DOMAIN}
           subject:
             - 'group:admins'
           policy: one_factor
