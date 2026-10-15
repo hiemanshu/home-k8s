@@ -142,7 +142,9 @@ spec:
                 widget:
                   type: qbittorrent
                   url: http://qbittorrent.media.svc.cluster.local:8080
-                  key: "{{HOMEPAGE_VAR_QBITTORRENT_API_KEY}}"
+                  # no webui auth: the image whitelists 10.0.0.0/8, so the
+                  # widget reaches the API without credentials (authelia gates
+                  # the ui itself)
         - Monitoring:
             - Grafana:
                 icon: grafana.png
