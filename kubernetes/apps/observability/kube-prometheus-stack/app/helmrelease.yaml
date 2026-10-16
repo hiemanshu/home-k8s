@@ -76,6 +76,20 @@ spec:
             webhook_configs:
               - url: http://alertmanager-ntfy.observability.svc.cluster.local:8000/hook
                 send_resolved: true
+          # Required, and not obvious. The chart's default config ships a `route.routes`
+          # entry sending Watchdog to a receiver named "null". `route` is a MAP, so our
+          # block merged with the chart's and that sub-route survived -- while
+          # `receivers` is a LIST, so ours REPLACED the chart's and dropped the receiver
+          # it points at.
+          #
+          # The result was an Alertmanager whose config could never be provisioned:
+          #   failed to initialize from secret: undefined receiver "null" used in route
+          # so its StatefulSet was never created, Prometheus had nothing to connect to,
+          # and NOT ONE alert was ever delivered. Watchdog is meant to go nowhere; the
+          # receiver just has to exist for the route to be valid.
+          #
+          # Quoted deliberately: an unquoted null is the YAML null value, not the string.
+          - name: "null"
     grafana:
       enabled: true
       # Single replica holding an RWO Longhorn volume, so a rolling update deadlocks:
