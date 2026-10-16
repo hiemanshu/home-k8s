@@ -24,7 +24,7 @@ note_() { printf '  note     %s\n' "$*"; }
 lines() { printf '%s\n' "$1" | sed '/^$/d'; }
 
 # --- exception lists (keep in sync with SKILL.md "known deliberate exceptions") ---
-VOLSYNC_EXEMPT="couchdb immich"
+VOLSYNC_EXEMPT="immich"
 DISABLED_APPS="jellyseerr tautulli"
 BACKUP_NOT_NEEDED="postgres postgres-secrets gitea-mirror"
 # Routed, but not application-like: they consume none of our config, and restarting

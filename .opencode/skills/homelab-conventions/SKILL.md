@@ -43,6 +43,28 @@ stale image pin) rather than loud.
 Do not fix things silently. Propose, then let the user choose — several "obvious"
 fixes here have needed a decision first.
 
+### flux-local — the tree-level check
+
+`kubectl kustomize` builds one directory and knows nothing about the cluster. `flux-local`
+renders the **whole** tree the way Flux does — templating every HelmRelease — and verifies
+that references resolve. It catches what the audit script cannot: a bad `path`, a
+`dependsOn` naming a Kustomization that does not exist, a chart ref that will not resolve.
+
+```sh
+# --enable-helm needs helm on PATH; the CI image has it, a bare shell may not
+uvx flux-local test --enable-helm --all-namespaces --path kubernetes/flux/cluster -v
+```
+
+The repo's CI runs this from `ghcr.io/allenporter/flux-local`. Note the workflow is
+**`pull_request`-triggered only** — a direct push to `main` is not validated by it, and
+that is how several of the mistakes in this repo's history reached the cluster.
+
+**What it cannot catch:** anything that is only invalid against a *live* object — API
+defaulting, field immutability, merge-patch semantics. It renders and validates structure;
+it never talks to the API server. A `strategy: Recreate` colliding with an API-defaulted
+`rollingUpdate` passes `flux-local` and fails only on the real upgrade, and an immutable
+`StorageClass.parameters` change passes it and fails only on apply.
+
 ## House rules
 
 ### App structure
@@ -90,6 +112,10 @@ fixes here have needed a decision first.
   - `readOnlyRootFilesystem: true` means anything the app writes needs a mount. Mount
     `tmp` (emptyDir) by default, and expect to iterate — say so rather than claiming
     it works.
+  - **It is not universal here yet.** `auth/lldap`, `auth/authelia`, `dev/gitea-mirror`
+    and `media/immich` do not set it, and none is a documented exception. That is an
+    open gap, not a rule that currently holds — fix or exempt them explicitly rather
+    than reading the rule above as satisfied.
 
 ### Auth (Authelia)
 
@@ -110,8 +136,12 @@ fixes here have needed a decision first.
   therefore means passkey **plus** password. Do not reach for
   `experimental_enable_passkey_uv_two_factors` — the user rejected experimental
   Authelia features.
-- OIDC client secrets are currently **plaintext in the configmap** (known Phase 5
-  debt). Note it, don't fix it unprompted.
+- OIDC client secrets come from 1Password like everything else: each client uses
+  `{{ secret "/secrets/<name>_oauth_client_secret" }}`, fed by the authelia
+  ExternalSecret from that app's own item (`key: <app>, property: OIDC_CLIENT_SECRET`).
+  The app reads the same field, so the two cannot drift. **An earlier version of this
+  note claimed they were plaintext and repeated it as "known debt" — that was wrong.**
+  Check before carrying a debt forward.
 
 ### Secrets
 
@@ -139,9 +169,17 @@ fixes here have needed a decision first.
   group*. A database with no `backup`/`ObjectStore`/`ScheduledBackup` is an
   un-rebuildable loss, because unlike everything else here it cannot be restored from
   git.
-- Chart-owned PVCs (e.g. `apache/couchdb` creates its own) cannot use the volsync
-  component without orphaning existing data. Prefer a bespoke `ReplicationSource`
-  pointing at the existing PVC in place — no migration, no data risk.
+- **Chart-owned PVCs cannot use `components/volsync`** — the component has to own the
+  PVC it backs up. In order of preference:
+  - **Don't let the chart own it.** `obsidian-couchdb` was rebuilt on app-template
+    instead of the apache chart precisely so the component could own its volume. This
+    is the better fix, because a bespoke source ties the backup to a chart-internal
+    volume name that an upgrade can change out from under it.
+  - Otherwise a bespoke `ReplicationSource` pointed at the existing PVC works — but
+    note **there is no instance of that in the repo yet**, so it is untested here.
+  - **Live gap:** Grafana's PVC is chart-created (the parent chart sets
+    `persistence.enabled`), so it has **no backup at all** and the audit cannot see it.
+    Worth a decision rather than a discovery.
 
 ### Network and DNS
 
@@ -172,11 +210,10 @@ trains the user to ignore the audit.
 | Thing | Why it is fine |
 |---|---|
 | `jellyseerr`, `tautulli` commented out | Deferred to Phase 6 on purpose |
-| `couchdb` has no volsync component | Its chart owns the PVC; backed up in place instead |
+| `gitea-mirror` not backed up | Its state is a mirror of GitHub — reproducible by re-running it |
 | `immich`'s 1Ti PVC not backed up | It is the NFS library on the NAS — outside the cluster by design |
 | MediaCover / Plex cache PVCs unbacked | Regenerable by design |
 | `opencloud` is a public OIDC client without PKCE | Accepted risk, see decisions §8.1 |
-| Plaintext OIDC client secrets | Known Phase 5 debt |
 | `readOnlyRootFilesystem` on an app not yet proven | Convention applied proactively; iterate if it crashloops |
 | `obsidian-couchdb` has no `readOnlyRootFilesystem` | The official CouchDB image's entrypoint writes into `/opt/couchdb/etc` at startup |
 | `obsidian-couchdb` is a statefulset with a hand-written HTTPRoute | LiveSync's `_changes` feed needs a 300s route timeout, which app-template's `route` block does not expose |
