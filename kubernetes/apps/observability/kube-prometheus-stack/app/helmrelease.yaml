@@ -16,6 +16,18 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  valuesFrom:
+    # Grafana's admin credentials as a Helm values fragment, from 1Password.
+    #
+    # Deliberately the adminPassword VALUE rather than GF_SECURITY_ADMIN_PASSWORD: the
+    # chart writes its own <release>-grafana secret from this value, and that secret is
+    # what the k8s sidecars (dashboard/datasource import) authenticate with. Setting
+    # only the env var would leave the sidecars holding a different password than
+    # Grafana itself -- a 401 and dashboards that silently never appear, while Grafana
+    # looks perfectly healthy. It also stops the chart generating a fresh random
+    # password on every render.
+    - kind: Secret
+      name: grafana-admin
   values:
     # CRDs seeded at bootstrap (00-crds.yaml); Flux keeps them current via the
     # global crds: CreateReplace patch, so keep the chart's `crds` subchart enabled.
