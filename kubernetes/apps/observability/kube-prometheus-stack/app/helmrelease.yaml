@@ -69,6 +69,14 @@ spec:
       # releases the volume. Same reasoning as subgen's strategy.
       deploymentStrategy:
         type: Recreate
+        # Required, not cosmetic. The API defaults `rollingUpdate` onto any Deployment
+        # created with type RollingUpdate, and a merge patch never removes a field the
+        # manifest does not mention -- so the live object ends up with type: Recreate AND
+        # the defaulted rollingUpdate, which the API rejects:
+        #   spec.strategy.rollingUpdate: Forbidden: may not be specified when strategy
+        #   `type` is 'Recreate'
+        # An explicit null is what deletes it.
+        rollingUpdate: null
       podAnnotations:
         reloader.stakater.com/auto: "true"
       persistence:
