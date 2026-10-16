@@ -61,6 +61,14 @@ spec:
                 send_resolved: true
     grafana:
       enabled: true
+      # Single replica holding an RWO Longhorn volume, so a rolling update deadlocks:
+      # maxSurge starts the new pod (possibly on another node), maxUnavailable keeps the
+      # old one until the new is Ready, and the new can never attach a volume the old
+      # still holds. Grafana sat in Init:0/1 on exactly this -- Multi-Attach, with the
+      # old pod named in the event. Recreate tears the old pod down first, which
+      # releases the volume. Same reasoning as subgen's strategy.
+      deploymentStrategy:
+        type: Recreate
       podAnnotations:
         reloader.stakater.com/auto: "true"
       persistence:
