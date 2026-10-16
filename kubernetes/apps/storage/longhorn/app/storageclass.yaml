@@ -11,20 +11,35 @@ parameters:
   dataLocality: disabled
   numberOfReplicas: "1"
 ---
-# `longhorn-vm` is deliberately ABSENT here, temporarily.
+# VM disks: one replica, preferred on the node the VM runs on.
 #
-# StorageClass `parameters` really are immutable -- `field is immutable` from the API,
-# enforced by declarative validation on the registry strategy rather than by
-# ValidateStorageClassUpdate, which only checks metadata. Changing dataLocality in place
-# therefore fails the whole `longhorn` Kustomization, and everything that dependsOn it
-# (snapshot-controller, volsync, the media apps, opencloud, obsidian-couchdb, gatus)
-# stays NotReady behind it.
+# Re-added after being removed for one commit -- StorageClass `parameters` are immutable,
+# so this could only ever be a fresh CREATE. See the git history: changing dataLocality
+# in place failed the whole `longhorn` Kustomization and left fifteen apps NotReady
+# behind it. Nothing referenced the class in the interim, so the gap was harmless.
 #
-# So it comes out of git for one commit: Flux prunes the existing object, `longhorn`
-# applies cleanly, and the next commit re-adds it with the wanted parameters -- a fresh
-# create rather than a rejected update. Nothing references it in the meantime: the only
-# VM disk was deleted with the test1 app, and CDI falls back if its scratch class is
-# missing.
+# best-effort, not strict-local. strict-local hard-pins the volume to the node of its
+# first consumer -- which for a VM disk is CDI's importer pod, and CDI offers no way to
+# control where that lands. A VM pinned elsewhere could then never attach its disk: a
+# displaced strict-local replica is marked Stopped rather than moved. best-effort keeps
+# a single replica and still prefers the workload's node, without the hard pin.
 #
-# Note for next time: this is the repo's own documented trap. Deleting and recreating is
-# the fix, and a plain apply never will be.
+# WaitForFirstConsumer so the volume follows the pod's node at creation time rather than
+# being placed arbitrarily. longhorn-cache above is Immediate because a volsync cache has
+# no such constraint.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-vm
+  annotations:
+    # CDI prefers this over the cluster default when a DataVolume omits
+    # storageClassName, so new VM disks land on the single-replica class without every
+    # DataVolume having to say so.
+    storageclass.kubevirt.io/is-default-virt-class: "true"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  dataLocality: best-effort
+  numberOfReplicas: "1"
