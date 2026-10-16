@@ -1,0 +1,157 @@
+---
+# Backup health for every CNPG cluster. Built from the metrics the existing backup
+# alerts already use (database/cnpg-monitoring), so the metric names are verified
+# rather than guessed.
+#
+# Deliberately not the deprecated cnpg_collector_last_available_backup_timestamp: it
+# reads 0 even with a completed base backup in the object store, so a panel built on it
+# would be permanently wrong. The barman-plugin metrics below are the real ones.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-cnpg-backups
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: Backups
+data:
+  cnpg-backups.json: |-
+    {
+      "annotations": { "list": [] },
+      "editable": false,
+      "graphTooltip": 0,
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Hours since last base backup",
+          "description": "A cluster with no backup at all shows a very large number here, because the underlying metric is 0. The 'never backed up' count below is the cleaner read on that case.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "h",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 12 },
+                  { "color": "red", "value": 24 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "(time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) / 3600",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Clusters never backed up",
+          "description": "Count of clusters whose last-available-backup timestamp is 0. Anything above zero means a cluster is running with nothing to restore from.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 6, "w": 4, "x": 8, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "count(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp == 0)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Clusters with a failure in 24h",
+          "description": "Recency, not a cumulative count -- a cluster whose failure timestamp is set and success is not would otherwise look permanently broken. Mirrors the CNPGBackupFailed alert.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "count((time() - barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp < 86400) and barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp > 0)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "WAL segments awaiting archive",
+          "description": "A healthy cluster sits at or near zero. Sustained growth means the point-in-time recovery window is shrinking.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 18, "x": 0, "y": 6 },
+          "fieldConfig": {
+            "defaults": { "unit": "short", "custom": { "fillOpacity": 10, "lineWidth": 1 } },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "cnpg_collector_pg_wal_archive_status{value=\"ready\"}",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "refresh": "5m",
+      "schemaVersion": 39,
+      "tags": ["cnpg", "backups"],
+      "time": { "from": "now-7d", "to": "now" },
+      "timezone": "browser",
+      "title": "CNPG Backups",
+      "uid": "cnpg-backups",
+      "version": 1
+    }

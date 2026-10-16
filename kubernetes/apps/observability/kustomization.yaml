@@ -14,4 +14,5 @@ resources:
   - ./alloy/ks.yaml
   - ./ntfy/ks.yaml
   - ./gatus/ks.yaml
+  - ./grafana-dashboards/ks.yaml
   - ./alertmanager-ntfy/ks.yaml
