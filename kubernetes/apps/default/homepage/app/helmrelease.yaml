@@ -184,6 +184,19 @@ spec:
                 icon: grafana.png
                 href: https://grafana.${SECRET_DOMAIN}
                 description: Metrics & logs
+                widget:
+                  type: grafana
+                  # Basic auth, not a token: the widget has no token field, and it reads
+                  # /api/admin/stats so the account has to be Admin. Basic auth is
+                  # deliberately still enabled in grafana.ini for the sidecars, and the
+                  # grafana NetworkPolicy already allows this namespace on 3000.
+                  url: http://kube-prometheus-stack-grafana.observability.svc.cluster.local:80
+                  username: "{{HOMEPAGE_VAR_GRAFANA_USER}}"
+                  password: "{{HOMEPAGE_VAR_GRAFANA_PASSWORD}}"
+                  # version/alerts left at their defaults: v1 tries Grafana's own alert
+                  # rules and falls back to the Alertmanager datasource. If the alerts
+                  # tile errors while dashboards and datasources are fine, set
+                  # `version: 2` plus `alerts:` to the Alertmanager datasource's name.
             - Gatus:
                 icon: gatus.png
                 href: https://status.${SECRET_DOMAIN}
