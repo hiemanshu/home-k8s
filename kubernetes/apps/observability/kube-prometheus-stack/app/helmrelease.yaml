@@ -16,6 +16,17 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+    # Required so `rollingUpdate: null` below actually removes the field.
+    #
+    # Helm now defaults to SERVER-SIDE apply, and under SSA a null only means "this
+    # manager does not own this field" -- it does not delete it. The field is owned by
+    # the manager from a previous release, so it survives the merge and the object stays
+    # invalid:
+    #   spec.strategy.rollingUpdate: Forbidden: may not be specified when strategy
+    #   `type` is 'Recreate'
+    # A 3-way strategic merge patch, which this selects, treats null as delete. That is
+    # the difference, and it is why the null alone did nothing.
+    serverSideApply: disabled
   valuesFrom:
     # Grafana's admin credentials as a Helm values fragment, from 1Password.
     #
@@ -69,13 +80,9 @@ spec:
       # releases the volume. Same reasoning as subgen's strategy.
       deploymentStrategy:
         type: Recreate
-        # Required, not cosmetic. The API defaults `rollingUpdate` onto any Deployment
-        # created with type RollingUpdate, and a merge patch never removes a field the
-        # manifest does not mention -- so the live object ends up with type: Recreate AND
-        # the defaulted rollingUpdate, which the API rejects:
-        #   spec.strategy.rollingUpdate: Forbidden: may not be specified when strategy
-        #   `type` is 'Recreate'
-        # An explicit null is what deletes it.
+        # Only effective because `upgrade.serverSideApply: disabled` above is set: a
+        # strategic merge patch treats null as delete, SSA does not. Without that, the
+        # API-defaulted rollingUpdate survives and the object is rejected.
         rollingUpdate: null
       podAnnotations:
         reloader.stakater.com/auto: "true"
