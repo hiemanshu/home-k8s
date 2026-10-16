@@ -11,38 +11,20 @@ parameters:
   dataLocality: disabled
   numberOfReplicas: "1"
 ---
-# VM disks: one replica, kept on the node the VM runs on. Deliberately not the
-# 3-replica default -- these are mostly test VMs, and the accepted trade-off is that
-# losing a node loses that node's VMs until they are restored from backup. Nothing
-# needs live migration, so single-copy local data is the right call, and keeping the
-# replica on the VM's own node avoids a network hop on every read.
+# `longhorn-vm` is deliberately ABSENT here, temporarily.
 #
-# WaitForFirstConsumer is required here, not cosmetic: it makes the volume follow
-# the pod's node at creation time rather than being placed arbitrarily.
-# longhorn-cache above is Immediate because a volsync cache has no such constraint.
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: longhorn-vm
-  annotations:
-    # CDI prefers this over the cluster default when a DataVolume omits
-    # storageClassName, so new VM disks land on the fast single-replica class
-    # without every DataVolume having to say so.
-    storageclass.kubevirt.io/is-default-virt-class: "true"
-provisioner: driver.longhorn.io
-allowVolumeExpansion: true
-reclaimPolicy: Delete
-volumeBindingMode: WaitForFirstConsumer
-parameters:
-  # best-effort, not strict-local. strict-local hard-pins the volume to the node of
-  # its first consumer -- which for a VM disk is CDI's importer pod, and CDI offers
-  # no way to control where that lands (CDIConfig only has `infra` selectors, and
-  # the import controller only honours a node selector for VDDK). So the disk would
-  # end up on whichever node the scheduler happened to pick for the import, and a VM
-  # pinned elsewhere could never attach it: a displaced strict-local replica is
-  # marked Stopped rather than moved.
-  #
-  # best-effort still keeps a single replica and still prefers the workload's node,
-  # but does not hard-pin, so the volume stays attachable from wherever the VM runs.
-  dataLocality: best-effort
-  numberOfReplicas: "1"
+# StorageClass `parameters` really are immutable -- `field is immutable` from the API,
+# enforced by declarative validation on the registry strategy rather than by
+# ValidateStorageClassUpdate, which only checks metadata. Changing dataLocality in place
+# therefore fails the whole `longhorn` Kustomization, and everything that dependsOn it
+# (snapshot-controller, volsync, the media apps, opencloud, obsidian-couchdb, gatus)
+# stays NotReady behind it.
+#
+# So it comes out of git for one commit: Flux prunes the existing object, `longhorn`
+# applies cleanly, and the next commit re-adds it with the wanted parameters -- a fresh
+# create rather than a rejected update. Nothing references it in the meantime: the only
+# VM disk was deleted with the test1 app, and CDI falls back if its scratch class is
+# missing.
+#
+# Note for next time: this is the repo's own documented trap. Deleting and recreating is
+# the fix, and a plain apply never will be.
