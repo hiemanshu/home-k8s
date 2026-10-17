@@ -41,6 +41,22 @@ spec:
       - --webhook-provider-url=http://localhost:8888
       # internal routes only (Cloudflare instance handles envoy-external)
       - --gateway-name=envoy-internal
+      # AdGuard resolves a CNAME rewrite's target against its UPSTREAMS, not
+      # against its own rewrites. With the Gateway's `internal.<domain>` target
+      # every app record was therefore a CNAME to a LAN-only name, and AdGuard
+      # answered "CNAME + NXDOMAIN": it applied the rewrite, then failed to
+      # resolve the target upstream and passed the NXDOMAIN through.
+      #
+      # macOS and Linux ignore the rcode and re-query the target themselves, so
+      # this looked healthy for months. Windows and nslookup treat NXDOMAIN as
+      # final, so EVERY ${SECRET_DOMAIN} name failed there. Go's resolver is
+      # strict too, which puts in-cluster OIDC token exchanges at risk.
+      #
+      # Pointing at the VIP makes AdGuard write A records, which it answers from
+      # its own rewrite: A + NOERROR, AAAA + NOERROR/empty, and no CNAME in the
+      # chain. The VIP is pinned by LB-IPAM, so it is as stable as the name was.
+      - --default-targets=192.168.69.3
+      - --force-default-targets
     policy: sync
     # gateway-httproute only: do NOT read DNSEndpoints, or we'd mirror the
     # cloudflare tunnel's `external.<domain>` CNAME and clobber the local name

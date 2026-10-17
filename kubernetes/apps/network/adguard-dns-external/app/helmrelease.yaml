@@ -41,11 +41,16 @@ spec:
       - --webhook-provider-url=http://localhost:8888
       # external routes only; adguard-dns-internal handles envoy-internal.
       - --gateway-name=envoy-external
-      # override the gateway's target (external.<domain>, which cloudflare
-      # needs) with a LAN-only name for adguard. external-lan.<domain> isn't
-      # public, so clients follow the CNAME to the local rewrite -> the
-      # envoy-external IP, exactly like internal.<domain>.
-      - --default-targets=external-lan.${SECRET_DOMAIN}
+      # Same reasoning as adguard-dns-internal: with the Gateway's
+      # `external.<domain>` target (which Cloudflare needs, because the public
+      # path goes through the tunnel) every record was a CNAME, and AdGuard
+      # resolves a CNAME target against its upstreams rather than its own
+      # rewrites -- so it answered "CNAME + NXDOMAIN" and Windows could not
+      # follow it. The VIP gives AdGuard an A record it can answer directly.
+      #
+      # This override lives here rather than on the Gateway so Cloudflare keeps
+      # `external.<domain>`: the public path genuinely needs the tunnel name.
+      - --default-targets=192.168.69.4
       - --force-default-targets
     # gateway-httproute only: do NOT mirror DNSEndpoints (the cloudflare tunnel
     # owns `external.<domain>`)
