@@ -19,3 +19,5 @@ talosconfig
 .venv/
 .DS_Store
 Thumbs.db
+# Scratch notes (working list, not shared)
+/todo.md
