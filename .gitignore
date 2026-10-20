@@ -4,6 +4,7 @@
 *.decrypted~*.yaml
 /age.key
 /cloudflare-tunnel.json
+/cf.token
 /github-deploy.key
 /github-deploy.key.pub
 /github-push-token.txt
