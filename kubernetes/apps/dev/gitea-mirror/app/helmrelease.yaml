@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: ghcr.io/raylabshq/gitea-mirror
-              tag: v3.43.0@sha256:80f9cd44224934038a70383b3a14be436414180792397a040d7053cd14be120e
+              tag: v3.45.0@sha256:b303d3b0a2f9d0e8e96fa264998529a814787e94012d0f6f01e13096ae67b182
             env:
               NODE_ENV: production
               HOST: 0.0.0.0
