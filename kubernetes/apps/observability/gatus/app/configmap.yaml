@@ -124,7 +124,10 @@ data:
         conditions: ["[STATUS] < 400"]
       - name: Homepage
         group: Monitoring
-        url: http://homepage.default.svc.cluster.local:3000/
+        # `/api/healthcheck` is Homepage's own "up", and the only route exempt from
+        # its v2 auth gate. It is still Host-checked, so the Service name and port
+        # are in HOMEPAGE_ALLOWED_HOSTS over in `default/homepage`.
+        url: http://homepage.default.svc.cluster.local:3000/api/healthcheck
         conditions: ["[STATUS] < 400"]
       - name: Gatus
         group: Monitoring

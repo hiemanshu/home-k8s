@@ -36,7 +36,12 @@ spec:
             mountPath: /app/config/custom.css
     env:
       - name: HOMEPAGE_ALLOWED_HOSTS
-        value: "home.${SECRET_DOMAIN}"
+        # Homepage compares the raw Host header, port included, against this
+        # comma-separated list (`src/middleware.js`) and answers 400 otherwise.
+        # The service entry is Gatus, which checks Homepage against the Service
+        # rather than through the gateway -- a pod reaching it by name sends
+        # `homepage.default.svc.cluster.local:3000` as the Host.
+        value: "home.${SECRET_DOMAIN},homepage.default.svc.cluster.local:3000"
     envFrom:
       - secretRef:
           name: homepage-widgets-secret
