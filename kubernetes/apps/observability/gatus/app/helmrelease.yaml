@@ -27,7 +27,18 @@ spec:
               repository: ghcr.io/twin/gatus
               tag: v5.37.0@sha256:094eb186e55235db367e90e9d56140e5897b7044c41de23cde4cc18e6da1242e
             env:
-              GATUS_CONFIG_PATH: /config/config.yaml
+              - name: GATUS_CONFIG_PATH
+                value: /config/config.yaml
+              # Alerting only. The config references this as $${NTFY_TOKEN}, which
+              # Flux renders as a literal ${NTFY_TOKEN} -- an unescaped one would
+              # be replaced with an empty string by postBuild and gatus would
+              # publish unauthenticated into a deny-all ntfy. gatus expands it from
+              # the environment when it parses config.yaml.
+              - name: NTFY_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: gatus-secret
+                    key: NTFY_TOKEN
             probes:
               # Gatus serves its own health endpoint on the same port
               liveness: &probes

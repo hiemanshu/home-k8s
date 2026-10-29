@@ -47,81 +47,121 @@ data:
       default-sort-by: group
       default-sort-order: asc
 
+    alerting:
+      # Same ntfy, same `alerts` topic and the same 1Password publish token the
+      # Alertmanager bridge posts to, so one subscription on the phone covers both.
+      ntfy:
+        # The Service, not notify.<domain>: an alert should not travel through the
+        # ingress path it is reporting on. ntfy's own NetworkPolicy already admits
+        # same-namespace publishers on port 80.
+        url: http://ntfy.observability.svc.cluster.local
+        topic: alerts
+        # `$${...}` is deliberate -- see the NTFY_TOKEN env var in the HelmRelease.
+        # Flux empties an undefined ${VAR}, and the escaping keeps a literal
+        # ${NTFY_TOKEN} here for gatus to expand. The value must stay `tk_`-prefixed
+        # or the ntfy provider fails validation and gatus drops it with a warning.
+        token: $${NTFY_TOKEN}
+        # `default-alert` only supplies defaults for endpoints that declare an
+        # ntfy alert, so every endpoint below carries `alerts: [{ type: ntfy }]`.
+        default-alert:
+          enabled: true
+          description: healthcheck failed
+          send-on-resolved: true
+          failure-threshold: 3
+          success-threshold: 2
+
     endpoints:
       - name: Authelia
         group: Identity
         url: https://auth.${SECRET_DOMAIN}/api/health
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: lldap
         group: Identity
         url: tcp://lldap.auth.svc.cluster.local:3890
         conditions: ["[CONNECTED] == true"]
+        alerts: [{ type: ntfy }]
 
       - name: Forgejo
         group: Dev
         url: https://git.${SECRET_DOMAIN}/api/healthz
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: gitea-mirror
         group: Dev
         url: http://gitea-mirror.dev.svc.cluster.local:4321/api/health
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
 
       - name: Immich
         group: Photos
         url: https://photos.${SECRET_DOMAIN}/api/server/ping
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
 
       - name: OpenCloud
         group: Files
         url: https://files.${SECRET_DOMAIN}/
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: Zipline
         group: Files
         url: https://share.${SECRET_DOMAIN}/api/healthcheck
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: CouchDB
         group: Files
         url: tcp://obsidian-couchdb.database.svc.cluster.local:5984
         conditions: ["[CONNECTED] == true"]
+        alerts: [{ type: ntfy }]
 
       - name: Plex
         group: Media
         url: https://plex.${SECRET_DOMAIN}/identity
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: Radarr
         group: Media
         url: http://radarr.media.svc.cluster.local:80/ping
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: Sonarr
         group: Media
         url: http://sonarr.media.svc.cluster.local:80/ping
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: Prowlarr
         group: Media
         url: http://prowlarr.media.svc.cluster.local:80/ping
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: SABnzbd
         group: Media
         url: http://sabnzbd.media.svc.cluster.local:80/api?mode=version
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: Bazarr
         group: Media
         url: http://bazarr.media.svc.cluster.local:6767/api/system/ping
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: qBittorrent
         group: Media
         # the client itself, not the `downloads.` UI (vuetorrent) in front of it
         url: http://qbittorrent.media.svc.cluster.local:8080/
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
 
       - name: Grafana
         group: Monitoring
         url: http://kube-prometheus-stack-grafana.observability.svc.cluster.local:80/api/health
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: ntfy
         group: Monitoring
         url: https://notify.${SECRET_DOMAIN}/v1/health
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: Homepage
         group: Monitoring
         # `/api/healthcheck` is Homepage's own "up", and the only route exempt from
@@ -129,6 +169,7 @@ data:
         # are in HOMEPAGE_ALLOWED_HOSTS over in `default/homepage`.
         url: http://homepage.default.svc.cluster.local:3000/api/healthcheck
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: Gatus
         group: Monitoring
         # The one check that goes through `envoy-internal` on purpose. `status.` is
@@ -142,16 +183,20 @@ data:
         headers:
           Accept: text/html
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
 
       - name: Longhorn
         group: Infrastructure
         url: http://longhorn-frontend.storage.svc.cluster.local:80/
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: KubeVirt Manager
         group: Infrastructure
         url: http://kubevirt-manager.virtualization.svc.cluster.local:8080/
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
       - name: AdGuard
         group: Infrastructure
         url: http://adguard-dns-internal.network.svc.cluster.local:3000/
         conditions: ["[STATUS] < 400"]
+        alerts: [{ type: ntfy }]
