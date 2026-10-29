@@ -29,11 +29,10 @@ spec:
             env:
               - name: GATUS_CONFIG_PATH
                 value: /config/config.yaml
-              # Alerting only. The config references this as $${NTFY_TOKEN}, which
-              # Flux renders as a literal ${NTFY_TOKEN} -- an unescaped one would
-              # be replaced with an empty string by postBuild and gatus would
-              # publish unauthenticated into a deny-all ntfy. gatus expands it from
-              # the environment when it parses config.yaml.
+              # Alerting only. The doubled dollar in the config is what keeps Flux
+              # from touching that reference: this cluster substitutes in strict
+              # mode, so an undefined one fails the Kustomization outright. gatus
+              # expands it from this environment variable when it parses the file.
               - name: NTFY_TOKEN
                 valueFrom:
                   secretKeyRef:

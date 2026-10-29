@@ -56,10 +56,13 @@ data:
         # same-namespace publishers on port 80.
         url: http://ntfy.observability.svc.cluster.local
         topic: alerts
-        # `$${...}` is deliberate -- see the NTFY_TOKEN env var in the HelmRelease.
-        # Flux empties an undefined ${VAR}, and the escaping keeps a literal
-        # ${NTFY_TOKEN} here for gatus to expand. The value must stay `tk_`-prefixed
-        # or the ntfy provider fails validation and gatus drops it with a warning.
+        # The doubled dollar below is deliberate. This cluster substitutes in
+        # strict mode, so a braced reference that resolves to nothing fails the
+        # whole Kustomization outright rather than expanding to empty. Doubling the
+        # dollar makes Flux emit the reference literally, and gatus then expands it
+        # from the environment when it parses this file. The value must keep its
+        # `tk_` prefix or the ntfy provider fails validation and gatus drops it
+        # with nothing but a warning in the log.
         token: $${NTFY_TOKEN}
         # `default-alert` only supplies defaults for endpoints that declare an
         # ntfy alert, so every endpoint below carries `alerts: [{ type: ntfy }]`.
