@@ -4,10 +4,31 @@ kind: ConfigMap
 metadata:
   name: gatus-config
 data:
-  # Checks hit the real routes over HTTPS, so they exercise DNS, the gateway, TLS
-  # and the app -- not just "the pod is listening". Conditions are `[STATUS] < 400`
-  # because several apps legitimately answer 302 (Authelia forward-auth) or 302/200
-  # (their own OIDC), while 404 and 5xx both mean something is actually broken.
+  # Two kinds of check, split by how a request can reach the app at all.
+  #
+  # Names on `envoy-external`, plus the internal ones Authelia marks `bypass`, are
+  # checked over HTTPS on the real hostname: that exercises DNS, the gateway, TLS
+  # and the app, not just "the pod is listening". Conditions are
+  # `[STATUS] < 400` because several of those apps legitimately answer 302 (their
+  # own OIDC), while 404 and 5xx both mean something is actually broken.
+  #
+  # Everything else routes on `envoy-internal`, which carries a *gateway-wide*
+  # ext-auth SecurityPolicy (`network/envoy-gateway`), so Authelia answers before
+  # the app does. Authelia only redirects when the request accepts `text/html` --
+  # otherwise it replies 401 (`getAuthzRedirectStatusCode`, `internal/handlers/`
+  # `handler_authz_util.go` in Authelia 4.39). Gatus sends no `Accept` header
+  # (request headers are opt-in per endpoint), so every forward-auth'd host read
+  # as down while the browser was perfectly happy. Those are checked against the
+  # Service instead, which is also the honest check: behind ext-auth a 302 comes
+  # back even when the backend is dead, so a check *through* the internal gateway
+  # could never go red for a broken app.
+  #
+  # Accepted consequence: the internal apps below are checked against their
+  # Services rather than through `envoy-internal`. One exception is deliberate --
+  # `status.` is internal-only and forward-auth'd, so it really does land on that
+  # gateway, and its redirect back proves DNS -> the internal VIP -> the listener
+  # -> TLS -> Authelia in a single check. If that gateway breaks, that row goes
+  # red even though this page would then be unopenable.
   #
   # Paths are the same health endpoints the pods' own probes use.
   #
@@ -42,7 +63,7 @@ data:
         conditions: ["[STATUS] < 400"]
       - name: gitea-mirror
         group: Dev
-        url: https://mirror.${SECRET_DOMAIN}/api/health
+        url: http://gitea-mirror.dev.svc.cluster.local:4321/api/health
         conditions: ["[STATUS] < 400"]
 
       - name: Immich
@@ -69,32 +90,33 @@ data:
         conditions: ["[STATUS] < 400"]
       - name: Radarr
         group: Media
-        url: https://radarr.${SECRET_DOMAIN}/ping
+        url: http://radarr.media.svc.cluster.local:80/ping
         conditions: ["[STATUS] < 400"]
       - name: Sonarr
         group: Media
-        url: https://sonarr.${SECRET_DOMAIN}/ping
+        url: http://sonarr.media.svc.cluster.local:80/ping
         conditions: ["[STATUS] < 400"]
       - name: Prowlarr
         group: Media
-        url: https://prowlarr.${SECRET_DOMAIN}/ping
+        url: http://prowlarr.media.svc.cluster.local:80/ping
         conditions: ["[STATUS] < 400"]
       - name: SABnzbd
         group: Media
-        url: https://sabnzbd.${SECRET_DOMAIN}/api?mode=version
+        url: http://sabnzbd.media.svc.cluster.local:80/api?mode=version
         conditions: ["[STATUS] < 400"]
       - name: Bazarr
         group: Media
-        url: https://bazarr.${SECRET_DOMAIN}/api/system/ping
+        url: http://bazarr.media.svc.cluster.local:6767/api/system/ping
         conditions: ["[STATUS] < 400"]
       - name: qBittorrent
         group: Media
-        url: https://downloads.${SECRET_DOMAIN}/
+        # the client itself, not the `downloads.` UI (vuetorrent) in front of it
+        url: http://qbittorrent.media.svc.cluster.local:8080/
         conditions: ["[STATUS] < 400"]
 
       - name: Grafana
         group: Monitoring
-        url: https://grafana.${SECRET_DOMAIN}/api/health
+        url: http://kube-prometheus-stack-grafana.observability.svc.cluster.local:80/api/health
         conditions: ["[STATUS] < 400"]
       - name: ntfy
         group: Monitoring
@@ -102,16 +124,29 @@ data:
         conditions: ["[STATUS] < 400"]
       - name: Homepage
         group: Monitoring
-        url: https://home.${SECRET_DOMAIN}/
+        url: http://homepage.default.svc.cluster.local:3000/
+        conditions: ["[STATUS] < 400"]
+      - name: Gatus
+        group: Monitoring
+        # The one check that goes through `envoy-internal` on purpose. `status.` is
+        # internal-only and Authelia-gated, so nothing about the app is being
+        # tested here -- what is being tested is the edge in front of it.
+        #
+        # `Accept: text/html` is the whole point: without an Accept header Authelia
+        # answers 401 and this reads as broken; with it, Authelia redirects (302),
+        # gatus follows to the portal and lands on a 200. See the header comment.
+        url: https://status.${SECRET_DOMAIN}/
+        headers:
+          Accept: text/html
         conditions: ["[STATUS] < 400"]
 
       - name: Longhorn
         group: Infrastructure
-        url: https://longhorn.${SECRET_DOMAIN}/
+        url: http://longhorn-frontend.storage.svc.cluster.local:80/
         conditions: ["[STATUS] < 400"]
       - name: KubeVirt Manager
         group: Infrastructure
-        url: https://virt.${SECRET_DOMAIN}/
+        url: http://kubevirt-manager.virtualization.svc.cluster.local:8080/
         conditions: ["[STATUS] < 400"]
       - name: AdGuard
         group: Infrastructure
