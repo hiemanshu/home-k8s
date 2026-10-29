@@ -11,4 +11,8 @@ spec:
     operation: copy
   ref:
     tag: 0.34.1
-  url: oci://ghcr.io/home-operations/charts-mirror/intel-device-plugins-operator
+  # Intel's own OCI registry. This used to pull from
+  # ghcr.io/home-operations/charts-mirror, which no longer serves these two
+  # packages at all -- anonymous token requests for them return 403 while the
+  # mirror's other charts still answer 200, so every pull of every version failed.
+  url: oci://ghcr.io/intel/helm-charts/intel-device-plugins-operator
