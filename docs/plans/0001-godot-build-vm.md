@@ -1,6 +1,6 @@
 # 0001: A Godot build VM on KubeVirt
 
-**Status:** draft
+**Status:** in-progress (steps 1 to 4 committed; step 5, the hand-over, waits on a kubeconfig)
 
 ## Goal
 
@@ -151,6 +151,16 @@ On this machine, no cluster:
   (`package_update`, `packages`, `ssh_import_id`, `runcmd`).
 - `uvx flux-local test --enable-helm --all-namespaces --path
   kubernetes/flux/cluster -v` passes, proving the `dependsOn` targets resolve.
+  **Could not run here:** flux-local opens a NamedTemporaryFile and then
+  writes to the same path, which Windows refuses, and this machine has no
+  docker or WSL to run the CI image. Substituted by hand: both `dependsOn`
+  targets exist as Kustomizations `cdi` (virtualization) and `longhorn`
+  (storage), the path exists, and kubeconform in strict mode validates the
+  Flux Kustomization and Service against the default schemas and the
+  VirtualMachine and DataVolume against the datreeio CRDs-catalog schemas
+  (the vendored operator manifests only carry the `KubeVirt` and `CDI` CRDs;
+  the operators create the rest at runtime). The pull_request workflow runs
+  flux-local for real, so open a PR rather than pushing straight to main.
 
 Against the cluster, handed to Hiemanshu:
 
