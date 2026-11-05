@@ -102,6 +102,24 @@ VirtualMachine `godot-build`, `runStrategy: Always`, label
     (`x86_64-w64-mingw32-gcc`, `-g++`, `i686-w64-mingw32-gcc`, `-g++`) to their
     `-posix` variants, non-interactively.
 
+### `kubernetes/apps/virtualization/vm/app/service.yaml` (added after the first two commits)
+
+Hiemanshu asked for a VIP so the VM has a stable LAN address. This cluster
+hands those out with Cilium LB-IPAM plus L2 announcements: a `LoadBalancer`
+Service carrying `lbipam.cilium.io/ips: <ip>` from the `192.168.68.0/22` pool,
+the same way Plex, k8s-gateway and the two Envoy gateways get theirs
+(`.69.2`, `.69.3`, `.69.4`, `.69.6` are taken).
+
+Service `godot-build`, `type: LoadBalancer`, selector
+`kubevirt.io/domain: godot-build` (the label on the VMI's launcher pod), port
+`22` named `ssh`. Masquerade networking means the guest sits behind the
+launcher pod's IP, so a Service on the pod is exactly how traffic reaches it;
+no bridge or Multus needed. `externalTrafficPolicy` stays `Cluster`, the
+default, because L2 announcement answers from whichever node holds the lease
+and the pod is pinned to gandalf anyway.
+
+The IP itself is Hiemanshu's call (open question below).
+
 ### `kubernetes/apps/virtualization/kustomization.yaml`
 
 Add `./vm/ks.yaml` to `resources`. Done as its own commit after the app
@@ -116,7 +134,9 @@ is not there.
    deployable until step 3, so it is one unit.
 3. Add the resource line to the namespace kustomization. Run `kubectl
    kustomize kubernetes/apps/virtualization` and `flux-local test`. Commit.
-4. Hand over: Hiemanshu pushes, and once a kubeconfig is at hand runs the
+4. Add `service.yaml` with the VIP, list it in the app kustomization, render
+   with `kubectl kustomize`. Commit.
+5. Hand over: Hiemanshu pushes, and once a kubeconfig is at hand runs the
    checks below and pastes the output back.
 
 ## Test plan
@@ -171,5 +191,11 @@ scons platform=windows target=template_release arch=x86_64 production=yes -j72
 
 ## Open questions
 
-- None blocking. Whether to add `dedicatedCpuPlacement` is a follow-up once
-  the first real build has run.
+- Which address from the pool the VIP should use. `.69.5` and `.69.7` upward
+  are free as far as git shows; the pool is the whole `/22` so anything not
+  handed out by the router works.
+- Whether the VIP also wants a DNS name. k8s-gateway watches Services, so it
+  may already answer for the Service name under the internal domain; confirm
+  what name it uses before relying on it.
+- Whether to add `dedicatedCpuPlacement` is a follow-up once the first real
+  build has run.
