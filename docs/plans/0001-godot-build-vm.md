@@ -38,9 +38,20 @@ What I checked before choosing the OS (all on 2026-11-05):
   well as a digest without making CDI resolve a manifest list.
 
 Sizing is what Hiemanshu asked for: 36 cores with 2 threads each (72 vCPU),
-256 GiB RAM, 256 GiB disk. gandalf has 80 threads and 400 GB, so this leaves
-8 threads and about 144 GB for everything else on the node. LTO needs about
-7 GB per link, so memory is not the constraint.
+256 GiB RAM, and a disk that started at 256 GiB and became 100 GiB (see
+below). gandalf has 80 threads and 400 GB, so this leaves 8 threads and about
+144 GB for everything else on the node. LTO needs about 7 GB per link, so
+memory is not the constraint.
+
+The 256 GiB disk never scheduled. The launcher pod sat Pending with "1 node(s)
+did not have enough free storage": Longhorn schedules by declared size, not
+bytes written, and with `storage-over-provisioning-percentage` at 100 it would
+only promise about 222 GiB more on gandalf, where 665 GB of the 957 GB disk was
+already spoken for by other replicas. Hiemanshu chose 100 GiB over raising the
+over-provisioning setting cluster-wide. At the same time the DataVolume got
+`pullMethod: node`, because the default pod pull needs a scratch volume the
+same size as the target on the same class and node, which would have doubled
+what Longhorn had to find during the import.
 
 The vCPUs are shared, not reserved: an idle VM costs the node almost nothing,
 and a build bursts onto whatever is free. Memory is not bursty in the same
@@ -77,8 +88,9 @@ Lists `datavolume.yaml` and `virtualmachine.yaml`.
 ### `kubernetes/apps/virtualization/vm/app/datavolume.yaml`
 
 DataVolume `godot-build`, source
-`docker://quay.io/containerdisks/ubuntu:26.04-2610230208`, storage class
-`longhorn-vm` set explicitly, request `256Gi`.
+`docker://quay.io/containerdisks/ubuntu:26.04-2610230208` with
+`pullMethod: node`, storage class `longhorn-vm` set explicitly, request
+`100Gi`.
 
 ### `kubernetes/apps/virtualization/vm/app/virtualmachine.yaml`
 
@@ -171,7 +183,7 @@ kubectl get vmi -n virtualization godot-build          # Running, on gandalf
 virtctl ssh ubuntu@vmi/godot-build -n virtualization   # or via kubevirt-manager
 # inside the VM
 cloud-init status --wait --long                        # status: done
-nproc; free -g; df -h /                                # 72, ~251, ~250G
+nproc; free -g; df -h /                                # 72, ~251, ~97G
 gcc --version; scons --version; x86_64-w64-mingw32-gcc --version
 x86_64-w64-mingw32-gcc -v 2>&1 | grep -o 'Thread model: posix'
 git clone --depth 1 -b 4.7 https://github.com/godotengine/godot && cd godot
@@ -193,9 +205,13 @@ scons platform=windows target=template_release arch=x86_64 production=yes -j72
   before SSH keys land. `ssh_import_id` runs late in the boot, after packages,
   so an early SSH attempt will be refused. `cloud-init status --wait` is the
   check.
-- A 256Gi thin volume on `longhorn-vm` is single-replica and local to gandalf by
+- A 100Gi thin volume on `longhorn-vm` is single-replica and local to gandalf by
   best effort. If gandalf's disk fills, the VM pauses. Longhorn's own
-  over-provisioning setting applies.
+  over-provisioning setting applies, and it is what capped the first attempt.
+- A DataVolume's spec is immutable, so a size change in git does not reach a
+  DataVolume that already exists. The Pending one has to be deleted by hand and
+  Flux recreates it. Safe while the import has not started; after that it means
+  reimporting.
 - `ssh_import_id` needs egress to github.com through masquerade networking.
   The `test1` VM curled github.com the same way, so this is known to work.
 
