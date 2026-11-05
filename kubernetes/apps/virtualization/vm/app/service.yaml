@@ -1,0 +1,27 @@
+---
+# A stable LAN address for the VM, done the way every other VIP here is done:
+# a LoadBalancer Service with lbipam.cilium.io/ips, announced over L2 by Cilium.
+#
+# The selector matches the VMI's launcher pod by the kubevirt.io/domain label we
+# set on the VM template. Masquerade networking puts the guest behind the pod's
+# IP, so a Service on the pod is exactly how traffic reaches the guest -- no
+# bridge or Multus needed. Only SSH for now; add ports here as the VM grows
+# services worth reaching from the LAN.
+#
+# externalTrafficPolicy stays at the default (Cluster): L2 announcement answers
+# from whichever node holds the lease, and the pod is pinned to gandalf anyway.
+apiVersion: v1
+kind: Service
+metadata:
+  name: godot-build
+  annotations:
+    lbipam.cilium.io/ips: "192.168.69.31"
+spec:
+  type: LoadBalancer
+  selector:
+    kubevirt.io/domain: godot-build
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 22
+      protocol: TCP
