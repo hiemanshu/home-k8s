@@ -1,0 +1,97 @@
+---
+# A build box for Godot 4.7 and Windows game exports. Ubuntu 26.04 because its
+# GCC 15.2 is the same major Godot's own release containers build with, and it is
+# an LTS. See docs/plans/0001-godot-build-vm.md for the comparison.
+#
+# runStrategy rather than the deprecated `running` field.
+#
+# Sizing: 36 cores x 2 threads = 72 vCPU and 256Gi, on a node with 80 threads and
+# 400GB. vCPUs are shared, so an idle VM costs nothing; the memory request is
+# what KubeVirt derives from the guest size, so the scheduler treats 256Gi as
+# taken whenever the VM runs.
+#
+# cloud-init pulls SSH keys straight from GitHub via ssh-import-id rather than a
+# password, so there is no credential anywhere in git or in 1Password.
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: godot-build
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: godot-build
+    spec:
+      # All VMs live on gandalf for now. The disk's replica does not have to be
+      # there -- longhorn-vm is best-effort, so the volume attaches from wherever
+      # the VM runs.
+      nodeSelector:
+        kubernetes.io/hostname: gandalf
+      domain:
+        cpu:
+          sockets: 1
+          cores: 36
+          threads: 2
+        memory:
+          guest: 256Gi
+        resources:
+          requests:
+            memory: 256Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        # the VM controller holds the VM back until the import reaches Succeeded
+        - name: rootdisk
+          dataVolume:
+            name: godot-build
+        - name: cloudinit
+          cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              package_update: true
+              package_upgrade: true
+              # Godot 4.7's Debian/Ubuntu list, verbatim from
+              # docs.godotengine.org/en/4.7 "Compiling for Linux, *BSD", then
+              # mingw-w64 for Windows export templates, then git/clang/lld for
+              # checkouts and faster link cycles (scons linker=lld).
+              packages:
+                - build-essential
+                - scons
+                - pkg-config
+                - libx11-dev
+                - libxcursor-dev
+                - libxinerama-dev
+                - libgl1-mesa-dev
+                - libglu1-mesa-dev
+                - libasound2-dev
+                - libpulse-dev
+                - libudev-dev
+                - libxi-dev
+                - libxrandr-dev
+                - libwayland-dev
+                - mingw-w64
+                - git
+                - clang
+                - lld
+              # Keys for the default `ubuntu` user, fetched from GitHub.
+              ssh_import_id:
+                - gh:hiemanshu
+              # Ubuntu ships mingw with the win32 thread model selected; Godot's
+              # Windows build needs posix or it fails. The docs say to run
+              # `update-alternatives --config` interactively; --set is the same
+              # thing non-interactively.
+              runcmd:
+                - update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+                - update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+                - update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix
+                - update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix

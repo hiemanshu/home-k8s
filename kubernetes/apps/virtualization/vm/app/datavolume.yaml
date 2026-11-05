@@ -1,0 +1,28 @@
+---
+# The VM's disk. CDI pulls the containerdisk image and writes the OS onto a PVC
+# named after this object, so there is exactly one PVC per VM.
+#
+# The dated tag is a containerdisks build snapshot -- containerdisks never
+# republish one, so it pins as effectively as a digest would, without making CDI
+# resolve an architecture out of a manifest list.
+#
+# storageClassName is set explicitly *and* longhorn-vm carries
+# storageclass.kubevirt.io/is-default-virt-class, which is what makes future
+# DataVolumes pick the fast single-replica class without being told. Belt and
+# braces: if the annotation ever goes missing, this one still lands correctly.
+#
+# 256Gi is thin-provisioned on Longhorn, so it only consumes what the guest
+# writes. A Godot checkout plus editor and template builds is tens of GiB.
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: godot-build
+spec:
+  source:
+    registry:
+      url: "docker://quay.io/containerdisks/ubuntu:26.04-2610230208"
+  storage:
+    storageClassName: longhorn-vm
+    resources:
+      requests:
+        storage: 256Gi
