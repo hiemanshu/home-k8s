@@ -44,7 +44,7 @@ spec:
           app:
             image:
               repository: docker.io/library/couchdb
-              tag: 3.5.3@sha256:bed314d10cdf58c0fff63352db4c3f168df58a185a773c0e2295105375c5ef10
+              tag: 3.5.3@sha256:0ba6b4b8dd823232185fa2c7de04634b925be62f97c9b7cbece7dd9119470e17
             envFrom:
               - secretRef:
                   name: obsidian-couchdb-secret
